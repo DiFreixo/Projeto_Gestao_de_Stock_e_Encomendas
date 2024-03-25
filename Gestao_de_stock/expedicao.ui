@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Expedicao</class>
+ <widget class="QWidget" name="Expedicao">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1010</width>
+    <height>671</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1010</width>
+    <height>671</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1010</width>
+    <height>671</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QStackedWidget" name="stackedWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1010</width>
+     <height>671</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>1010</width>
+     <height>671</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>1010</width>
+     <height>671</height>
+    </size>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: #ADCE74;</string>
+   </property>
+   <property name="currentIndex">
+    <number>1</number>
+   </property>
+   <widget class="QWidget" name="page1_ListarExpedicoes">
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>30</y>
+       <width>711</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: #004b23;</string>
+     </property>
+     <property name="text">
+      <string>Lista de Expedições</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnInicio_expedicao">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>30</y>
+       <width>96</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">	background-color: #F09200;
+	color: #004b23;
+	border: 1.5px solid #F09200;
+	border-style: outset;
+	border-radius: 5px;</string>
+     </property>
+     <property name="text">
+      <string> Início</string>
+     </property>
+     <property name="icon">
+      <iconset resource="imagens.qrc">
+       <normaloff>:/img/img/Home.png</normaloff>:/img/img/Home.png</iconset>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnNovo_expedicao">
+     <property name="geometry">
+      <rect>
+       <x>884</x>
+       <y>30</y>
+       <width>96</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">	background-color: #F09200;
+	color: #004b23;
+	border: 1.5px solid #F09200;
+	border-style: outset;
+	border-radius: 5px;</string>
+     </property>
+     <property name="text">
+      <string> Nova</string>
+     </property>
+     <property name="icon">
+      <iconset resource="imagens.qrc">
+       <normaloff>:/img/img/Add.png</normaloff>:/img/img/Add.png</iconset>
+     </property>
+    </widget>
+    <widget class="QTableWidget" name="tableWidget_expedicao">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>80</y>
+       <width>951</width>
+       <height>371</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #E6F7E6;</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="page2_RegistarExpedicoes">
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>30</y>
+       <width>711</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>16</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: #004b23;</string>
+     </property>
+     <property name="text">
+      <string>Registo de Expedições</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnVoltar_expedicoes">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>30</y>
+       <width>96</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">	background-color: #F09200;
+	color: #004b23;
+	border: 1.5px solid #F09200;
+	border-style: outset;
+	border-radius: 5px;</string>
+     </property>
+     <property name="text">
+      <string> Voltar</string>
+     </property>
+     <property name="icon">
+      <iconset resource="imagens.qrc">
+       <normaloff>:/img/img/Previous.png</normaloff>:/img/img/Previous.png</iconset>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources>
+  <include location="imagens.qrc"/>
+ </resources>
+ <connections/>
+</ui>

@@ -1,0 +1,16 @@
+debug/clientes.o
+debug/encomendas.o
+debug/expedicao.o
+debug/listaprodutos.o
+debug/main.o
+debug/mainwindow.o
+debug/producao.o
+debug/stockprodutos.o
+debug/qrc_imagens.o
+debug/moc_clientes.o
+debug/moc_encomendas.o
+debug/moc_expedicao.o
+debug/moc_listaprodutos.o
+debug/moc_mainwindow.o
+debug/moc_producao.o
+debug/moc_stockprodutos.o

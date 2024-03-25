@@ -1,0 +1,16 @@
+release/clientes.o
+release/encomendas.o
+release/expedicao.o
+release/listaprodutos.o
+release/main.o
+release/mainwindow.o
+release/producao.o
+release/stockprodutos.o
+release/qrc_imagens.o
+release/moc_clientes.o
+release/moc_encomendas.o
+release/moc_expedicao.o
+release/moc_listaprodutos.o
+release/moc_mainwindow.o
+release/moc_producao.o
+release/moc_stockprodutos.o

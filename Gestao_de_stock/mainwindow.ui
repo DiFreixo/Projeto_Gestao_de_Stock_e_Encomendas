@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1150</width>
+    <height>692</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1150</width>
+    <height>692</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1150</width>
+    <height>692</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>GlowGlass</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="imagens.qrc">
+    <normaloff>:/img/img/glowglass.png</normaloff>:/img/img/glowglass.png</iconset>
+  </property>
+  <property name="toolButtonStyle">
+   <enum>Qt::ToolButtonIconOnly</enum>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QLabel" name="label_imagemFundo">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1150</width>
+      <height>692</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>1150</width>
+      <height>692</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>1150</width>
+      <height>692</height>
+     </size>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Plain</enum>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QWidget" name="barraEsquerda" native="true">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>141</width>
+      <height>671</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QWidget { border: 2px solid #004b23; }</string>
+    </property>
+    <widget class="QPushButton" name="btnProdutos">
+     <property name="geometry">
+      <rect>
+       <x>7</x>
+       <y>120</y>
+       <width>122</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton 
+{
+	background-color: #004b23;
+	color: #F09200;
+	border: 1.5px solid #004b23;
+	border-style: outset;
+	border-radius: 5px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Produtos</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnProducao">
+     <property name="geometry">
+      <rect>
+       <x>7</x>
+       <y>200</y>
+       <width>122</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton 
+{
+	background-color: #004b23;
+	color: #F09200;
+	border: 1.5px solid #004b23;
+	border-style: outset;
+	border-radius: 5px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Produção</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnStock">
+     <property name="geometry">
+      <rect>
+       <x>7</x>
+       <y>280</y>
+       <width>122</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton 
+{
+	background-color: #004b23;
+	color: #F09200;
+	border: 1.5px solid #004b23;
+	border-style: outset;
+	border-radius: 5px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Stock</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnClientes">
+     <property name="geometry">
+      <rect>
+       <x>7</x>
+       <y>360</y>
+       <width>122</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton 
+{
+	background-color: #004b23;
+	color: #F09200;
+	border: 1.5px solid #004b23;
+	border-style: outset;
+	border-radius: 5px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Clientes</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnEncomendas">
+     <property name="geometry">
+      <rect>
+       <x>7</x>
+       <y>440</y>
+       <width>122</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton 
+{
+	background-color: #004b23;
+	color: #F09200;
+	border: 1.5px solid #004b23;
+	border-style: outset;
+	border-radius: 5px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Encomendas</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnExpedicao">
+     <property name="geometry">
+      <rect>
+       <x>7</x>
+       <y>520</y>
+       <width>122</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton 
+{
+	background-color: #004b23;
+	color: #F09200;
+	border: 1.5px solid #004b23;
+	border-style: outset;
+	border-radius: 5px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Expedição</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QStackedWidget" name="stackedWidget">
+    <property name="geometry">
+     <rect>
+      <x>141</x>
+      <y>0</y>
+      <width>1010</width>
+      <height>671</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+     </font>
+    </property>
+    <widget class="QWidget" name="page">
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>355</x>
+        <y>270</y>
+        <width>301</width>
+        <height>131</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap resource="imagens.qrc">:/img/img/glowglass2.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources>
+  <include location="imagens.qrc"/>
+ </resources>
+ <connections/>
+</ui>

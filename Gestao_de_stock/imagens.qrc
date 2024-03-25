@@ -1,0 +1,21 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>img/bottles7.jpg</file>
+        <file>img/Add.png</file>
+        <file>img/Delete.png</file>
+        <file>img/Home.png</file>
+        <file>img/Save.png</file>
+        <file>img/glowglass.png</file>
+        <file>img/Apagar.png</file>
+        <file>img/Close.png</file>
+        <file>img/Create.png</file>
+        <file>img/Home1.png</file>
+        <file>img/Modify.png</file>
+        <file>img/pesquisar.png</file>
+        <file>img/Previous.png</file>
+        <file>img/Refresh.png</file>
+        <file>img/Remove.png</file>
+        <file>img/Yes.png</file>
+        <file>img/glowglass2.png</file>
+    </qresource>
+</RCC>
