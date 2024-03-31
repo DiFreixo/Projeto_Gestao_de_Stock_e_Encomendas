@@ -17,24 +17,25 @@ public:
     explicit Clientes(QWidget *parent = nullptr);
     ~Clientes();
 
+    // métodos da classe
+    void carregarDadosClientes();
+
+    // atributos da classe
+
 private:
     Ui::Clientes *ui;
 
 
-    // métodos
+    // métodos da classe
     void limparCampos();
     void desabilitarCampos();
     void habilitarCampos();
-    void carregarDadosClientes();
     void limparTableWidget(QTableWidget *limpaTW);
     void atualizarCliente();
     bool verificarCampos();
 
-    // atributos
+    // atributos da classe
     QString idClienteSelecionado = "";
-
-
-
 
 
 signals:

@@ -409,7 +409,7 @@ public:
 
         retranslateUi(Encomendas);
 
-        stackedWidget->setCurrentIndex(1);
+        stackedWidget->setCurrentIndex(0);
 
 
         QMetaObject::connectSlotsByName(Encomendas);
@@ -420,7 +420,7 @@ public:
         Encomendas->setWindowTitle(QCoreApplication::translate("Encomendas", "Form", nullptr));
         label->setText(QCoreApplication::translate("Encomendas", "Lista de Encomendas", nullptr));
         btnInicio_encomendas->setText(QCoreApplication::translate("Encomendas", " In\303\255cio", nullptr));
-        btnNovo_encomenda->setText(QCoreApplication::translate("Encomendas", " Nova", nullptr));
+        btnNovo_encomenda->setText(QCoreApplication::translate("Encomendas", " Novo", nullptr));
         groupBox->setTitle(QCoreApplication::translate("Encomendas", "Pesquisar por:", nullptr));
         cmbPesquisar->setItemText(0, QString());
         cmbPesquisar->setItemText(1, QCoreApplication::translate("Encomendas", "N\303\243o", nullptr));
@@ -441,7 +441,7 @@ public:
         btnEliminar->setText(QCoreApplication::translate("Encomendas", " Eliminar", nullptr));
         label_44->setText(QCoreApplication::translate("Encomendas", "Quant. Total", nullptr));
         btnModificar->setText(QCoreApplication::translate("Encomendas", " Alterar", nullptr));
-        label_10->setText(QCoreApplication::translate("Encomendas", "C\303\263digo Encomenda", nullptr));
+        label_10->setText(QCoreApplication::translate("Encomendas", "Nr. Encomenda", nullptr));
         txtDataCriacao->setText(QString());
         label_9->setText(QCoreApplication::translate("Encomendas", "Registo", nullptr));
         label_11->setText(QCoreApplication::translate("Encomendas", "Cliente", nullptr));

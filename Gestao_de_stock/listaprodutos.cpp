@@ -211,7 +211,7 @@ void ListaProdutos::on_btnGuardar_clicked()
             queryApagar.prepare("DELETE FROM produtoDetalhe WHERE ID_Produto = :ID_Produto");
             queryApagar.bindValue(":ID_Produto", idGerado);
             if (!queryApagar.exec()) {
-                qDebug() << "Erro ao remover o detalhe do produto:" << queryApagar.lastError().text();
+                qDebug() << "Erro ao remover o produto da tabela produtoDetalhe:" << queryApagar.lastError().text();
             }
 
             // Remover da tabela 'produto' o produto inserido anteriormente
@@ -604,7 +604,7 @@ void ListaProdutos::on_btnEliminar_clicked()
     else{
         QMessageBox::StandardButton confirmar;
         confirmar = QMessageBox::question(this, "Confirmar",
-                                          "Pretende eliminar o produto " + ui->txtNome->text() + " ?",
+                                          "Pretende eliminar o produto " + ui->txtNome->text() + "?",
                                           QMessageBox::Yes|QMessageBox::No);
 
         if (confirmar == QMessageBox::Yes)

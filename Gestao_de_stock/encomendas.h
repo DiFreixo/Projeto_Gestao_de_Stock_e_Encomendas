@@ -47,6 +47,7 @@ private:
 
 signals:
     void InicioClicked();
+    void encomendasAtualizadas();
 
 public slots:
     void preencherComboboxCliente();

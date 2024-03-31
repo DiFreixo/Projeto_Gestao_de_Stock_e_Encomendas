@@ -12,7 +12,7 @@ Stock_minimo	INT NULL,
 Preco_venda		DOUBLE NOT NULL default 0,
 Descricao		VARCHAR(300) NULL,
 Imagem			VARCHAR(200) NULL,
-Data_criacao    timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+Data_criacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 PRIMARY KEY (ID_Produto)
 );
 
@@ -49,7 +49,7 @@ Telefone	 VARCHAR(9) NOT NULL,
 Email		 VARCHAR(150) NOT NULL,
 Endereco	 VARCHAR(200) NOT NULL,
 Observacoes  VARCHAR(400) NULL,
-Data_criacao timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+Data_criacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 PRIMARY KEY (ID_Cliente)
 );
      
@@ -58,10 +58,10 @@ ID_Encomenda  	INT AUTO_INCREMENT,
 Num_Encomenda 	CHAR(8) NOT NULL,	
 ID_Cliente  	INT NOT NULL,
 Qtd_encomenda	INT NOT NULL CHECK(Qtd_encomenda > 0),
-Data_encomenda	timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+Data_encomenda	TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 Valor			DOUBLE NOT NULL default 0,
 Data_entrega	DATE NULL,
-Expedida        VARCHAR(7) NOT NULL,
+Expedida        VARCHAR(7) NOT NULL DEFAULT 'Não',  
 PRIMARY KEY (ID_Encomenda),
 FOREIGN KEY (ID_Cliente) references Cliente(ID_Cliente)
 	on update cascade
@@ -73,6 +73,7 @@ ID_Encomenda            INT NOT NULL,
 ID_Produto		        INT NOT NULL,	
 Valor			        DOUBLE NOT NULL default 0,
 Qtd_produto  	        INT NOT NULL CHECK(Qtd_produto > 0),
+Utilizado               BIT NOT NULL default 0,
 PRIMARY KEY (ID_EncomendaDetalhe),
 FOREIGN KEY (ID_Encomenda) references Encomenda(ID_Encomenda)
 	on update cascade,
@@ -86,9 +87,9 @@ ID_Expedicao  	INT AUTO_INCREMENT,
 Num_Expedicao 	CHAR(8) NOT NULL,	
 ID_Cliente  	INT NOT NULL,
 Qtd_expedicao	INT NOT NULL CHECK(Qtd_expedicao > 0),
-Data_expedicao	timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+Data_registo	TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 Valor			DOUBLE NOT NULL default 0,
-Data_entrega	DATE NULL,
+Data_expedicao	DATE NULL,
 PRIMARY KEY (ID_Expedicao)
 );
 
@@ -112,9 +113,11 @@ FOREIGN KEY (ID_Expedicao) references Expedicao(ID_Expedicao)
 CREATE TABLE Producao (
 ID_Producao  		INT AUTO_INCREMENT,
 Num_OP				CHAR(7) NOT NULL,
-ID_Encomenda  		INT NULL,
+ID_Encomenda  		INT NOT NULL,
 Qtd_produzida		INT NOT NULL CHECK(Qtd_produzida > 0),
-Data_ordemProducao	timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+Data_ordemProducao	TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+Data_Producao       DATE NULL,
+Status_OP           VARCHAR(12) NOT NULL DEFAULT 'Planeada',
 PRIMARY KEY (ID_Producao),
 FOREIGN KEY (ID_Encomenda) references Encomenda(ID_Encomenda)
 	on update cascade
@@ -125,14 +128,11 @@ CREATE TABLE ProducaoDetalhe (
 ID_ProducaoDetalhes  INT AUTO_INCREMENT,
 ID_Producao		     INT NOT NULL,
 ID_Produto		  	 INT NOT NULL,
-ID_Stock		     INT NOT NULL,
 Qtd_produto  		 INT NOT NULL CHECK(Qtd_produto > 0),	
 PRIMARY KEY (ID_ProducaoDetalhes),
 FOREIGN KEY (ID_Producao) references Producao(ID_Producao)
 	on update cascade,
 FOREIGN KEY (ID_Produto) references Produto(ID_Produto)
-	on update cascade,
-FOREIGN KEY (ID_Stock) references Stock(ID_Stock)
 	on update cascade
 );
 

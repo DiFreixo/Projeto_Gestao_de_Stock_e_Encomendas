@@ -20,6 +20,7 @@ SOURCES += \
 
 HEADERS += \
     QuantidadeDelegate.h \
+    ReportDialog.h \
     clientes.h \
     encomendas.h \
     expedicao.h \

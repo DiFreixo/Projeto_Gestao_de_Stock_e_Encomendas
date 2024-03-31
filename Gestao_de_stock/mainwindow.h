@@ -34,7 +34,7 @@ private slots:
     void on_btnEncomendas_clicked();
     void on_btnExpedicao_clicked();
     void moveInicio();
-    void mostrarListaProdutos();
+    // void mostrarListaProdutos();
 
 
 private:

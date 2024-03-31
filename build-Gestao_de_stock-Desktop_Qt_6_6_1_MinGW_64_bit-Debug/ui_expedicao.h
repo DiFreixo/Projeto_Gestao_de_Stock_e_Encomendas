@@ -117,7 +117,7 @@ public:
 
         retranslateUi(Expedicao);
 
-        stackedWidget->setCurrentIndex(1);
+        stackedWidget->setCurrentIndex(0);
 
 
         QMetaObject::connectSlotsByName(Expedicao);
@@ -128,7 +128,7 @@ public:
         Expedicao->setWindowTitle(QCoreApplication::translate("Expedicao", "Form", nullptr));
         label->setText(QCoreApplication::translate("Expedicao", "Lista de Expedi\303\247\303\265es", nullptr));
         btnInicio_expedicao->setText(QCoreApplication::translate("Expedicao", " In\303\255cio", nullptr));
-        btnNovo_expedicao->setText(QCoreApplication::translate("Expedicao", " Nova", nullptr));
+        btnNovo_expedicao->setText(QCoreApplication::translate("Expedicao", " Novo", nullptr));
         label_8->setText(QCoreApplication::translate("Expedicao", "Registo de Expedi\303\247\303\265es", nullptr));
         btnVoltar_expedicoes->setText(QCoreApplication::translate("Expedicao", " Voltar", nullptr));
     } // retranslateUi

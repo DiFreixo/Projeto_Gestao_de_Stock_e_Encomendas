@@ -50,7 +50,7 @@
     <string notr="true">background-color: #ADCE74;</string>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page1_ListarEncomendas">
     <widget class="QLabel" name="label">
@@ -137,7 +137,7 @@
 	border-radius: 5px;</string>
      </property>
      <property name="text">
-      <string> Nova</string>
+      <string> Novo</string>
      </property>
      <property name="icon">
       <iconset resource="imagens.qrc">
@@ -621,7 +621,7 @@ background-color: rgb(208, 208, 208);
       </rect>
      </property>
      <property name="text">
-      <string>Código Encomenda</string>
+      <string>Nr. Encomenda</string>
      </property>
     </widget>
     <widget class="QLineEdit" name="txtDataCriacao">

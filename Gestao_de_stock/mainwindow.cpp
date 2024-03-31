@@ -80,7 +80,10 @@ MainWindow::MainWindow(QWidget *parent)
     // conectar o sinal do Emissor ao slot do Receptor
     connect(clientes, &Clientes::clientesAtualizados, encomendas, &Encomendas::preencherComboboxCliente);
     connect(listaProdutos, &ListaProdutos::listaProdutosAtualizada, encomendas, &Encomendas::atualizarComboboxProdutos);
-
+    //connect(encomendas, &Encomendas::encomendasAtualizadas, producao, &Producao::preencherComboboxNrEncomenda);
+    connect(encomendas, &Encomendas::encomendasAtualizadas, this, [this]() {
+        producao->preencherComboboxNrEncomenda(true);
+    });
 }
 
 MainWindow::~MainWindow()
@@ -91,18 +94,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_btnProdutos_clicked()
 {
-     mostrarListaProdutos();
-}
-
-void MainWindow::mostrarListaProdutos() {
-
+    //mostrarListaProdutos();
     ui->stackedWidget->setCurrentIndex(1);
     listaProdutos->carregarDadosProdutos();
 }
 
+/*
+void MainWindow::mostrarListaProdutos() {
+
+    ui->stackedWidget->setCurrentIndex(1);
+    listaProdutos->carregarDadosProdutos();
+}*/
+
 void MainWindow::on_btnProducao_clicked()
 {
     ui->stackedWidget->setCurrentIndex(2);
+    producao->carregarDadosProducao();
 }
 
 void MainWindow::on_btnStock_clicked()
@@ -114,11 +121,13 @@ void MainWindow::on_btnStock_clicked()
 void MainWindow::on_btnClientes_clicked()
 {
     ui->stackedWidget->setCurrentIndex(4);
+    clientes->carregarDadosClientes();
 }
 
 void MainWindow::on_btnEncomendas_clicked()
 {
     ui->stackedWidget->setCurrentIndex(5);
+    encomendas->carregarDadosEncomendas();
 }
 
 void MainWindow::on_btnExpedicao_clicked()

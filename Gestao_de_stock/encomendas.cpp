@@ -446,14 +446,14 @@ void Encomendas::on_btnGuardar_clicked()
                 queryApagar.prepare("DELETE FROM encomendaDetalhe WHERE ID_Produto = :ID_Produto");
                 queryApagar.bindValue(":ID_Produto", idProduto);
                 if (!queryApagar.exec()) {
-                    qDebug() << "Erro ao remover a detalhes da encomenda:" << queryApagar.lastError().text();
+                    qDebug() << "Erro ao remover o produto da tabela encomendaDetalhe:" << queryApagar.lastError().text();
                 }
 
                 // Remove a encomenda inserida anteriormente
                 queryApagar.prepare("DELETE FROM encomenda WHERE ID_Encomenda = :ID_Encomenda");
                 queryApagar.bindValue(":ID_Encomenda", idEncomendaGerado);
                 if (!queryApagar.exec()) {
-                    qDebug() << "Erro ao remover o registo da encomenda:" << guardarDados.lastError().text();
+                    qDebug() << "Erro ao remover o registo da encomenda:" << queryApagar.lastError().text();
                 }
                 bd.rollback(); // Desfaz a transação
                 return;
@@ -479,6 +479,7 @@ void Encomendas::on_btnGuardar_clicked()
     ui->btnCancelar->setEnabled(true);
     ui->btnModificar->setEnabled(false);
     carregarDadosEncomendas();
+    emit encomendasAtualizadas();
 }
 
 void Encomendas::on_btnCancelar_clicked()
@@ -494,7 +495,6 @@ void Encomendas::on_btnCancelar_clicked()
 }
 
 // Apresentar todas as encomendas na tabela da lista de encomendas
-// NOTA: Falta verificar se a encomenda já foi expedida // CORRIGIR
 void Encomendas::carregarDadosEncomendas()
 {
     limparTableWidget(ui->tableWidget_encomendas);
@@ -532,7 +532,7 @@ void Encomendas::carregarDadosEncomendas()
 
         //colocar os títulos das colunas igual à ordem da query 'obterDados'
         QStringList titulos;
-        titulos = {"Registo", "Código", "Cliente", "Qtd Total (un)", "Valor Total (euros)", "Expedida", "Data Encomenda"};
+        titulos = {"Registo", "Nr. Encomenda", "Cliente", "Qtd Total (un)", "Valor Total (euros)", "Expedida", "Data Encomenda"};
         ui->tableWidget_encomendas->setHorizontalHeaderLabels(titulos);
         // formatar título
         ui->tableWidget_encomendas->horizontalHeader()->setStyleSheet("QHeaderView::section {color: white; background-color: #004b23; font: bold 10px}");
@@ -544,9 +544,9 @@ void Encomendas::carregarDadosEncomendas()
         ui->tableWidget_encomendas->verticalHeader()->resizeSections(QHeaderView::ResizeToContents);
         //definir a largura da coluna
         ui->tableWidget_encomendas->setColumnWidth(0, 80);
-        ui->tableWidget_encomendas->setColumnWidth(1, 80);
+        ui->tableWidget_encomendas->setColumnWidth(1, 100);
         ui->tableWidget_encomendas->setColumnWidth(2, 200);
-        ui->tableWidget_encomendas->setColumnWidth(3, 180);
+        ui->tableWidget_encomendas->setColumnWidth(3, 160);
         ui->tableWidget_encomendas->setColumnWidth(4, 180);
         ui->tableWidget_encomendas->setColumnWidth(5, 120);
         ui->tableWidget_encomendas->setColumnWidth(6, 100);
@@ -724,7 +724,7 @@ void Encomendas::on_btnModificar_clicked()
 }
 
 // atualizar o registo da encomenda na base de dados
-//NOTA:  só é possível alterar encomendas não expedidas - CORRIGIR
+//NOTA: só é possível alterar encomendas não expedidas, parcialmente ou totalmente e que não contenham produtos em produção - CORRIGIR
 // - Acrescentar novos produtos à encomenda, eliminar produtos exitentes,
 // neste momento só é possível atualizar as quantidades de produto - CORRIGIR
 void Encomendas::atualizarEncomenda()
@@ -876,7 +876,7 @@ void Encomendas::atualizarEncomenda()
     habilitarCampos();
 }
 
-// NOTA: só é possível eliminar encomendas não expedidas - CORRIGIR
+// NOTA: só é possível eliminar encomendas não expedidas, parcialmente ou totalmente e que não contenham produtos em produção - CORRIGIR
 void Encomendas::on_btnEliminar_clicked()
 {
     if (ui->txtRegisto->text().isEmpty()){
@@ -886,7 +886,7 @@ void Encomendas::on_btnEliminar_clicked()
     else{
         QMessageBox::StandardButton confirmar;
         confirmar = QMessageBox::question(this, "Confirmar",
-                                          "Pretende eliminar a encomenda " + ui->txtCodigo->text() + " ?",
+                                          "Pretende eliminar a encomenda " + ui->txtCodigo->text() + "?",
                                           QMessageBox::Yes|QMessageBox::No);
 
         if (confirmar == QMessageBox::Yes)
@@ -957,6 +957,7 @@ void Encomendas::on_btnEliminar_clicked()
             limparCampos();
             desabilitarCampos();
             carregarDadosEncomendas();
+            emit encomendasAtualizadas();
         }
     }
 }
@@ -1040,11 +1041,10 @@ bool Encomendas::verificarCamposCabecalho()
     return true;
 }
 
-
 // CORRIGIR
 bool Encomendas::verificarCamposLinhas()
 {
-
+   // verificar se os campos estão todos preenchidos e verificar se tem produtos repetidos
 
     return true;
 }
