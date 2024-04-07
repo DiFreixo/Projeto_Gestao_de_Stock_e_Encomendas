@@ -372,16 +372,3 @@ void StockProdutos::on_btnLimparPesquisa_clicked()
     carregarDadosStock();
 }
 
-/*NOTAS:
- * >> SOTCK TOTAL
- * - aumenta com a produtção
- * - aumenta com a entrada diversa
- * - diminui com a expedição
- * - diminui com a saída diversa
- *
- * >> SOTCK RESERVADO
- * - aumenta com as encomendas
- * - diminui com as expedições
- *
- *  >> SOTCK DISPONÍVEL =  SOTCK TOTAL - SOTCK RESERVADO
- */

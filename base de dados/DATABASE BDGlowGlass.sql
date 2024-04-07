@@ -61,7 +61,7 @@ Qtd_encomenda	INT NOT NULL CHECK(Qtd_encomenda > 0),
 Data_encomenda	TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 Valor			DOUBLE NOT NULL default 0,
 Data_entrega	DATE NULL,
-Expedida        VARCHAR(7) NOT NULL DEFAULT 'Não',  
+Expedida        VARCHAR(7) NOT NULL DEFAULT 'Não',
 PRIMARY KEY (ID_Encomenda),
 FOREIGN KEY (ID_Cliente) references Cliente(ID_Cliente)
 	on update cascade
@@ -73,7 +73,8 @@ ID_Encomenda            INT NOT NULL,
 ID_Produto		        INT NOT NULL,	
 Valor			        DOUBLE NOT NULL default 0,
 Qtd_produto  	        INT NOT NULL CHECK(Qtd_produto > 0),
-Utilizado               BIT NOT NULL default 0,
+Produzido               BIT NOT NULL default 0,
+Expedido                BIT NOT NULL default 0,
 PRIMARY KEY (ID_EncomendaDetalhe),
 FOREIGN KEY (ID_Encomenda) references Encomenda(ID_Encomenda)
 	on update cascade,
@@ -88,9 +89,12 @@ Num_Expedicao 	CHAR(8) NOT NULL,
 ID_Cliente  	INT NOT NULL,
 Qtd_expedicao	INT NOT NULL CHECK(Qtd_expedicao > 0),
 Data_registo	TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-Valor			DOUBLE NOT NULL default 0,
-Data_expedicao	DATE NULL,
-PRIMARY KEY (ID_Expedicao)
+Data_expedicaoPrevista DATE NULL,
+Data_expedicao	TIMESTAMP NULL,
+Expedida        VARCHAR(3) NOT NULL DEFAULT 'Não',
+PRIMARY KEY (ID_Expedicao),
+FOREIGN KEY (ID_Cliente) references Cliente(ID_Cliente)
+	on update cascade
 );
 
 CREATE TABLE ExpedicaoDetalhe (
@@ -98,7 +102,6 @@ ID_ExpDetalhes  INT AUTO_INCREMENT,
 ID_Expedicao	INT NOT NULL,
 ID_Encomenda	INT NOT NULL,
 ID_Produto		INT NOT NULL,	
-Valor			DOUBLE NOT NULL default 0,
 Qtd_produto  	INT NOT NULL CHECK(Qtd_produto > 0),
 PRIMARY KEY (ID_ExpDetalhes),
 FOREIGN KEY (ID_Encomenda) references Encomenda(ID_Encomenda)

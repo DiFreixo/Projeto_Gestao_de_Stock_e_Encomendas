@@ -97,6 +97,7 @@ void Producao::on_btnNovo_OP_clicked()
     ui->btnGuardar->setEnabled(true);
     ui->btnCancelar->setEnabled(true);
     ui->btnModificar->setEnabled(false);
+    preencherComboboxNrEncomenda(false);
 }
 
 // preencher a combobox com os Números de Encomendas existentes
@@ -109,7 +110,7 @@ void Producao::preencherComboboxNrEncomenda(bool mostrarTodasEncomendas = false)
 
     if (!mostrarTodasEncomendas) {
         queryString += "LEFT JOIN encomendaDetalhe ON encomenda.ID_Encomenda = encomendaDetalhe.ID_Encomenda "
-                       "WHERE encomenda.Expedida <> 'Total' AND encomendaDetalhe.Utilizado <> 1 GROUP BY encomenda.Num_Encomenda;";
+                       "WHERE encomenda.Expedida <> 'Total' AND encomendaDetalhe.Produzido <> 1 GROUP BY encomenda.Num_Encomenda;";
     } else {
         queryString += "WHERE encomenda.Expedida <> 'Total' GROUP BY encomenda.Num_Encomenda;";
     }
@@ -170,7 +171,7 @@ QMap<QString, QList<QString>> Producao::produtosEncomendaSelecionada(const QStri
                           "WHERE encomenda.Num_Encomenda = :Num_Encomenda ";
 
     if (!mostrarTodosProdutos) {
-        queryString += "AND encomendadetalhe.Utilizado = 0;";
+        queryString += "AND encomendadetalhe.Produzido = 0;";
     } else {
         queryString += ";";
     }
@@ -198,7 +199,7 @@ QMap<QString, QList<QString>> Producao::produtosEncomendaSelecionada(const QStri
 
 void Producao::preencherComboboxCodigoProduto(const QString &nrEncomenda)
 {
-    QComboBox* cmbProdutos = new QComboBox();
+    QComboBox* cmbProdutos = new QComboBox(ui->tableWidget_Produtos);
     QMap<QString, QList<QString>>  produtos = produtosEncomendaSelecionada(nrEncomenda);
 
     cmbProdutos->clear();
@@ -380,19 +381,21 @@ void Producao::on_btnGuardar_clicked()
         }
 
         // Atualizar a tabela 'encomendaDetalhe'
-        QSqlQuery updateUtilizado;
-        updateUtilizado.prepare("UPDATE encomendadetalhe SET Utilizado = 1 "
+        QSqlQuery updateProduzido;
+        updateProduzido.prepare("UPDATE encomendadetalhe SET Produzido = 1 "
                                 "WHERE ID_Encomenda = :ID_Encomenda AND ID_Produto = :ID_Produto;");
-        updateUtilizado.bindValue(":ID_Encomenda", idEncomenda);
-        updateUtilizado.bindValue(":ID_Produto", idProduto);
+        updateProduzido.bindValue(":ID_Encomenda", idEncomenda);
+        updateProduzido.bindValue(":ID_Produto", idProduto);
 
-        if (!updateUtilizado.exec()) {
-            qDebug() << "Falha ao atualizar a tabela encomendaDetalhe:" << updateUtilizado.lastError().text();
+        if (!updateProduzido.exec()) {
+            qDebug() << "Falha ao atualizar a tabela encomendaDetalhe:" << updateProduzido.lastError().text();
 
             QSqlQuery queryApagar;
             // Remover da tabela 'producaoDetalhe' o produto inserido anteriormente
-            queryApagar.prepare("DELETE FROM producaoDetalhe WHERE ID_Produto = :ID_Produto");
+            queryApagar.prepare("DELETE FROM producaoDetalhe WHERE ID_Produto = :ID_Produto AND "
+                                "ID_Producao = :ID_Producao");
             queryApagar.bindValue(":ID_Produto", idProduto);
+            guardarDados.bindValue(":ID_Producao", idProducaoGerado);
             if (!queryApagar.exec()) {
                 qDebug() << "Erro ao remover o produto tabela producaoDetalhe:" << queryApagar.lastError().text();
             }
@@ -465,12 +468,17 @@ void Producao::apresentarInfoOP(const int &idProducaoGerado)
         ui->txtDataCriacao->setText(dataOPFormatada);
 
         QString dataProducaoStr = obterDados.value("Data_Producao").toString();
-        QDate dataProducao = QDate::fromString(dataProducaoStr, "yyyy-MM-dd");
-        QString dataProducaoFormatada = dataProducao.toString("dd-MM-yyyy");
-        ui->txtDataProducao->setText(dataProducaoFormatada);
+        if(dataProducaoStr != ""){
+            QDate dataProducao = QDate::fromString(dataProducaoStr, "yyyy-MM-dd");
+            QString dataProducaoFormatada = dataProducao.toString("dd-MM-yyyy");
+            ui->txtDataProducao->setText(dataProducaoFormatada);
+        }
+        else{
+            ui->txtDataProducao->setText("");
+        }
 
         //preencher a tabela
-        QComboBox* cmbProdutos = new QComboBox();
+        QComboBox* cmbProdutos = new QComboBox(ui->tableWidget_Produtos);
         QString codProduto = obterDados.value("Codigo_Produto").toString();
         cmbProdutos->addItem(codProduto);
         cmbProdutos->setCurrentText(codProduto);
@@ -667,15 +675,15 @@ void Producao::on_btnEliminar_clicked()
 
             int idProduto = obterIdProduto.value("ID_Produto").toInt();
 
-            // Atualizar o campo Utilizado na tabela 'encomendaDetalhe'
-            QSqlQuery updateUtilizado;
-            updateUtilizado.prepare("UPDATE encomendadetalhe SET Utilizado = 0 "
+            // Atualizar o campo Produzido na tabela 'encomendaDetalhe'
+            QSqlQuery updateProduzido;
+            updateProduzido.prepare("UPDATE encomendadetalhe SET Produzido = 0 "
                                     "WHERE ID_Encomenda = :ID_Encomenda AND ID_Produto = :ID_Produto;");
-            updateUtilizado.bindValue(":ID_Encomenda", idEncomenda);
-            updateUtilizado.bindValue(":ID_Produto", idProduto);
+            updateProduzido.bindValue(":ID_Encomenda", idEncomenda);
+            updateProduzido.bindValue(":ID_Produto", idProduto);
 
-            if (!updateUtilizado.exec()) {
-                qDebug() << "Falha ao atualizar a coluna Utilizado na tabela encomendaDetalhe:" << updateUtilizado.lastError().text();
+            if (!updateProduzido.exec()) {
+                qDebug() << "Falha ao atualizar a coluna Produzido na tabela encomendaDetalhe:" << updateProduzido.lastError().text();
                 bd.rollback(); // Desfaz a transação
                 return;
             }
@@ -902,7 +910,7 @@ void Producao::limparCampos()
 {
     ui->txtDataProducao->clear();
     ui->cmbNrEncomenda->setCurrentIndex(0);
-    preencherComboboxNrEncomenda();
+    preencherComboboxNrEncomenda(false);
     ui->txtCliente->clear();
     ui->txtStatusOP->clear();
     ui->txtRegisto->clear();
@@ -948,7 +956,7 @@ void Producao::on_txtDataProducao_editingFinished()
     if (dataSelecionada.isValid()) {
         ui->dateEdit->setDate(dataSelecionada);
     } else {
-        qDebug() << "Data fornecida é inválida.";
+        qDebug() << "A Data fornecida é inválida.";
     }
 }
 
@@ -958,12 +966,12 @@ void Producao::carregarDadosProducao()
     limparTableWidget(ui->tableWidget_OrdemProd);
 
     QSqlQuery obterDados;
+
     obterDados.prepare("SELECT producao.ID_Producao, producao.Num_OP, encomenda.Num_Encomenda, produto.Codigo_Produto, "
                        "produto.Produto, producao.Qtd_produzida, producao.Status_OP, producao.Data_ordemProducao "
                        "FROM producao LEFT JOIN  encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
                        "LEFT JOIN  producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
-                       "LEFT JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto "
-                       "WHERE producao.ID_Producao = producaodetalhe.ID_Producao;");
+                       "LEFT JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto;");
 
     //verificar o acesso à BD
     if(obterDados.exec())
@@ -1016,7 +1024,7 @@ void Producao::carregarDadosProducao()
     {
         QMessageBox::critical(this, "Atenção", "Erro ao carregar a informação das Ordens de Produção na tabela.");
         qDebug() << "Erro ao carregar a informação das Ordens de Produção na tabela:" << obterDados.lastError().text();
-        qDebug() << "Consulta SQL Encomendas:" << obterDados.lastQuery();
+        qDebug() << "Consulta SQL Produção:" << obterDados.lastQuery();
     }
 }
 
@@ -1038,7 +1046,7 @@ void Producao::on_btnPesquisar_clicked()
     // construir a consulta SQL
     QString pesquisa = "SELECT producao.ID_Producao, producao.Num_OP, encomenda.Num_Encomenda, produto.Codigo_Produto, "
                        "produto.Produto, producao.Qtd_produzida, producao.Status_OP, producao.Data_ordemProducao "
-                       "FROM producao LEFT JOIN  encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
+                       "FROM producao LEFT JOIN encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
                        "LEFT JOIN  producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
                        "LEFT JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto "
                        "WHERE 1 = 1 ";
@@ -1057,7 +1065,6 @@ void Producao::on_btnPesquisar_clicked()
         pesquisa += " AND Status_OP = :Status_OP";
     }
 
-    pesquisa+= " AND producao.ID_Producao = producaodetalhe.ID_Producao;";
     // executar a consulta
     QSqlQuery queryPesquisa;
     queryPesquisa.prepare(pesquisa);

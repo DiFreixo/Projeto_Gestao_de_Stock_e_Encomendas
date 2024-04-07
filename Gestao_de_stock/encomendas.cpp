@@ -54,7 +54,7 @@ Encomendas::Encomendas(QWidget *parent)
     ui->tableWidget_ProdutosEnc->setColumnWidth(4, 140);
     ui->tableWidget_ProdutosEnc->setStyleSheet("QTableWidget {border: 2px solid #004b23;}");
     // aplicar um QIntValidator à quantidade e desabilitar a edição dos dados para as restantes colunas
-    ui->tableWidget_ProdutosEnc->setItemDelegate(new QuantidadDelegate(this));
+    ui->tableWidget_ProdutosEnc->setItemDelegate(new QuantidadDelegate(ui->tableWidget_ProdutosEnc));
 
     ui->cmbClientes->setCurrentIndex(0);
     ui->txtDataEntrega->setInputMask("99-99-9999;_");
@@ -63,7 +63,6 @@ Encomendas::Encomendas(QWidget *parent)
 
     connect(ui->tableWidget_ProdutosEnc, &QTableWidget::cellChanged, this, &Encomendas::calcularValorTotalLinha);
     calcularValorTotalCabecalho();
-
 }
 
 Encomendas::~Encomendas()
@@ -86,8 +85,10 @@ void Encomendas::on_btnNovo_encomenda_clicked()
     ui->btnGuardar->setEnabled(true);
     ui->btnCancelar->setEnabled(true);
     ui->btnModificar->setEnabled(false);
+    ui->btnAdLinha->setHidden(false);
+    ui->btnEliminaLinha->setHidden(false);
+    preencherComboboxCliente();
     preencherComboboxCodigoProduto();
-    //atualizarComboboxProdutos();
 }
 
 void Encomendas::on_btnVoltar_encomendas_clicked()
@@ -95,12 +96,14 @@ void Encomendas::on_btnVoltar_encomendas_clicked()
     ui->stackedWidget->setCurrentIndex(0);
 }
 
+//adicionar linhas à tabela 'tableWidget_ProdutosEnc'
 void Encomendas::on_btnAdLinha_clicked()
 {
     preencherComboboxCodigoProduto();
     calcularValorTotalCabecalho();
 }
 
+//remover linhas da tabela 'tableWidget_ProdutosEnc'
 void Encomendas::on_btnEliminaLinha_clicked()
 {
     auto selectedItems = ui->tableWidget_ProdutosEnc->selectedItems();
@@ -113,6 +116,7 @@ void Encomendas::on_btnEliminaLinha_clicked()
     calcularValorTotalCabecalho();
 }
 
+// apresentar na combobox 'cmbClientes' os nifs de todos os clientes
 void Encomendas::preencherComboboxCliente()
 {
     ui->cmbClientes->clear();
@@ -138,6 +142,8 @@ void Encomendas::on_cmbClientes_currentTextChanged(const QString &nif)
 {
     if (nif.isEmpty()) {
         ui->txtNome->clear();
+        limparTableWidget(ui->tableWidget_ProdutosEnc);
+        calcularValorTotalCabecalho();
         return;
     }
 
@@ -153,8 +159,14 @@ void Encomendas::on_cmbClientes_currentTextChanged(const QString &nif)
         qDebug() << "Erro ao obter o nome do cliente:" << obterNome.lastError().text();
         ui->txtNome->clear();
     }
+
+    limparTableWidget(ui->tableWidget_ProdutosEnc);
+    calcularValorTotalCabecalho();
+    preencherComboboxCodigoProduto();
 }
 
+// obter a informação dos produtos da base de dados e armazenar num "dicionário" em que
+// a chave é o código do produto
 QMap<QString,  QPair<QString, QString>> Encomendas::listaProdutosDisponiveis()
 {
     QMap<QString, QPair<QString, QString>> produtos;
@@ -175,16 +187,18 @@ QMap<QString,  QPair<QString, QString>> Encomendas::listaProdutosDisponiveis()
     return produtos;
 }
 
+// criar uma combobox na primeira coluna da tabela 'tableWidget_ProdutosEnc'
+// e preencher com os códigos dos produtos
 void Encomendas::preencherComboboxCodigoProduto()
 {
     // Desconecta temporariamente o sinal para evitar chamadas recursivas
     disconnect(ui->tableWidget_ProdutosEnc, &QTableWidget::cellChanged, this, &Encomendas::calcularValorTotalLinha);
 
-    QComboBox* cmbProdutos = new QComboBox();
     QMap<QString, QPair<QString, QString>> produtos = listaProdutosDisponiveis();
+    QComboBox* cmbProdutos = new QComboBox(ui->tableWidget_ProdutosEnc);
 
     cmbProdutos->addItem("", QVariant());
-
+    // preencher a combobox com o código
     for(auto item = produtos.begin(); item != produtos.end(); item++) {
         QString itemData = item.value().first + ";" + item.value().second;
         cmbProdutos->addItem(item.key(), QVariant(itemData));
@@ -208,6 +222,8 @@ void Encomendas::preencherComboboxCodigoProduto()
     connect(ui->tableWidget_ProdutosEnc, &QTableWidget::cellChanged, this, &Encomendas::calcularValorTotalLinha);
 }
 
+// atualizar a combobox da tabela 'tableWidget_ProdutosEnc' com a lista de produtos disponíveis
+// para o caso de serem adicionados mais produtos à base de dados e pretender alterar uma encomenda existente
 void Encomendas::atualizarComboboxProdutos() {
     QMap<QString, QPair<QString, QString>> produtos = listaProdutosDisponiveis();
 
@@ -231,6 +247,8 @@ void Encomendas::atualizarComboboxProdutos() {
     }
 }
 
+// preencher automáticamente as colunas nome do produto e preço do produto da tabela 'tableWidget_ProdutosEnc'
+// ao selecionar o código do produto na combobox
 void Encomendas::atualizarProdutoEPreco(int index) {
     QComboBox* cmbProdutos = qobject_cast<QComboBox*>(sender());
     if(!cmbProdutos) return;
@@ -265,6 +283,7 @@ void Encomendas::atualizarProdutoEPreco(int index) {
     }
 }
 
+// calcular o valor total do produto da encomenda
 void Encomendas::calcularValorTotalLinha(int row, int column)
 {
     // verificar se a célula alterada está na coluna da quantidade (2) ou do valor unitário (3)
@@ -283,6 +302,7 @@ void Encomendas::calcularValorTotalLinha(int row, int column)
     calcularValorTotalCabecalho();
 }
 
+// calcular o valor total de produtos da encomenda
 void Encomendas::calcularValorTotalCabecalho() {
     int qtdTotal = 0;
     double totalVendas = 0;
@@ -303,25 +323,6 @@ void Encomendas::calcularValorTotalCabecalho() {
     // atualiza os valores nos campos
     ui->txtQtdTotal->setText(QString::number(qtdTotal));
     ui->txtTotalVendas->setText(QString::number(totalVendas, 'f', 2).replace('.', ','));
-}
-
-void Encomendas::on_calendarWidget_selectionChanged()
-{
-    QDate date = ui->calendarWidget->selectedDate();
-    QString dataFormato = date.toString("dd-MM-yyyy");
-    ui->txtDataEntrega->setText(dataFormato);
-}
-
-void Encomendas::on_txtDataEntrega_editingFinished()
-{
-    QString data = ui->txtDataEntrega->text();
-    QDate date = QDate::fromString(data, "dd-MM-yyyy");
-
-    if (date.isValid()) {
-        ui->calendarWidget->setSelectedDate(date);
-    } else {
-        qDebug() << "Data fornecida é inválida.";
-    }
 }
 
 // Guardar o registo da encomenda na base de dados
@@ -368,7 +369,7 @@ void Encomendas::on_btnGuardar_clicked()
         QSqlQuery guardarDados;
         // Guardar o registo  na tabela Encomenda
         guardarDados.prepare("INSERT INTO encomenda (ID_Cliente, Data_entrega, Qtd_encomenda, Valor) VALUES "
-                      "(:ID_Cliente, :Data_entrega, :Qtd_encomenda, :Valor)");
+                             "(:ID_Cliente, :Data_entrega, :Qtd_encomenda, :Valor)");
         guardarDados.bindValue(":ID_Cliente", idCliente);
         guardarDados.bindValue(":Data_entrega", dataEntregaFormatada);
         guardarDados.bindValue(":Qtd_encomenda", qtdTotal);
@@ -389,11 +390,11 @@ void Encomendas::on_btnGuardar_clicked()
         int linhas = ui->tableWidget_ProdutosEnc->rowCount();
         for (int linha = 0; linha < linhas; linha++)
         {
-            QComboBox* comboBox = qobject_cast<QComboBox*>(ui->tableWidget_ProdutosEnc->cellWidget(linha, 0));
+            QComboBox* comboBox = qobject_cast<QComboBox*>(ui->tableWidget_ProdutosEnc->cellWidget(linha, 0)); //combobox existente
             // obter o código do item selecionado
             QString codigo = "";
             if (comboBox) {
-               codigo = comboBox->currentText();
+                codigo = comboBox->currentText();
             }
 
             QSqlQuery obterIdProduto;
@@ -443,8 +444,10 @@ void Encomendas::on_btnGuardar_clicked()
 
                 QSqlQuery queryApagar;
                 // Remover da tabela 'encomendaDetalhe' o produto inserido anteriormente
-                queryApagar.prepare("DELETE FROM encomendaDetalhe WHERE ID_Produto = :ID_Produto");
+                queryApagar.prepare("DELETE FROM encomendaDetalhe WHERE ID_Produto = :ID_Produto AND "
+                                    "ID_Encomenda = :ID_Encomenda");
                 queryApagar.bindValue(":ID_Produto", idProduto);
+                guardarDados.bindValue(":ID_Encomenda", idEncomendaGerado);
                 if (!queryApagar.exec()) {
                     qDebug() << "Erro ao remover o produto da tabela encomendaDetalhe:" << queryApagar.lastError().text();
                 }
@@ -576,13 +579,13 @@ void Encomendas::limparTableWidget(QTableWidget *limpaTW)
 // apresentar a informação detalhada da encomenda na página de registo de encomendas
 void Encomendas::on_tableWidget_encomendas_cellDoubleClicked()
 {
-    disconnect(ui->tableWidget_ProdutosEnc, &QTableWidget::cellChanged, this, &Encomendas::calcularValorTotalLinha);
-
     ui->btnVoltar_encomendas->setEnabled(true);
     ui->btnEliminar->setEnabled(true);
     ui->btnGuardar->setEnabled(false);
     ui->btnCancelar->setEnabled(false);
     ui->btnModificar->setEnabled(true);
+    ui->btnAdLinha->setHidden(true);
+    ui->btnEliminaLinha->setHidden(true);
     limparCampos();
     desabilitarCampos();
 
@@ -620,9 +623,15 @@ void Encomendas::on_tableWidget_encomendas_cellDoubleClicked()
         ui->txtDataCriacao->setText(dataFormatada);
         // formatar data de entrega
         QString dataEntregaStr = obterDados.value("Data_entrega").toString();
-        QDate dataEntrega = QDate::fromString(dataEntregaStr, "yyyy-MM-dd");
-        QString dataEntregaFormatada = dataEntrega.toString("dd-MM-yyyy");
-        ui->txtDataEntrega->setText(dataEntregaFormatada);
+        if(dataEntregaStr != ""){
+            QDate dataEntrega = QDate::fromString(dataEntregaStr, "yyyy-MM-dd");
+            QString dataEntregaFormatada = dataEntrega.toString("dd-MM-yyyy");
+            ui->txtDataEntrega->setText(dataEntregaFormatada);
+        }
+        else{
+            ui->txtDataEntrega->setText("");
+        }
+
         // apresentar o nif do cliente no campo 'cmbClientes'
         QString nifCliente = obterDados.value("NIF").toString();
         ui->cmbClientes->setCurrentText(nifCliente);
@@ -630,14 +639,16 @@ void Encomendas::on_tableWidget_encomendas_cellDoubleClicked()
         // preencher as linhas com os detalhes da encomenda
         QSqlQuery obterDetalhesEncomenda;
         obterDetalhesEncomenda.prepare("SELECT encomendaDetalhe.ID_EncomendaDetalhe, encomendaDetalhe.Qtd_produto, encomendaDetalhe.Valor, produto.Preco_venda, "
-                                         "produto.Codigo_Produto, produto.Produto "
-                                         "FROM encomendaDetalhe LEFT JOIN produto ON encomendaDetalhe.ID_Produto = produto.ID_Produto "
-                                         "WHERE encomendaDetalhe.ID_Encomenda = :ID_Encomenda");
-        obterDetalhesEncomenda.bindValue(":ID_Encomenda", idEncomendaSelecionada);
+                                       "produto.Codigo_Produto, produto.Produto "
+                                       "FROM encomendaDetalhe LEFT JOIN produto ON encomendaDetalhe.ID_Produto = produto.ID_Produto "
+                                       "WHERE encomendaDetalhe.ID_Encomenda = :ID_Encomenda");
+        obterDetalhesEncomenda.bindValue(":ID_Encomenda", idEncomenda);
 
         if (obterDetalhesEncomenda.exec()) {
-            while(obterDetalhesEncomenda.next()){
-                int novaLinha = ui->tableWidget_ProdutosEnc->rowCount();
+            int novaLinha = 0;
+            ui->tableWidget_ProdutosEnc->setRowCount(novaLinha);
+            while(obterDetalhesEncomenda.next())
+            {
                 ui->tableWidget_ProdutosEnc->insertRow(novaLinha);
 
                 //armazenar o ID_EncomendaDetalhe de cada linha da 'tableWidget_ProdutosEnc'
@@ -649,34 +660,14 @@ void Encomendas::on_tableWidget_encomendas_cellDoubleClicked()
                 ui->tableWidget_ProdutosEnc->setItem(novaLinha, 0, itemIDEncDetalhe);
                 //qDebug() << "ID_EncomendaDetalhe linha " << novaLinha <<": " << itemIDEncDetalhe->data(Qt::UserRole + 1).toInt();
 
-
-                /*
-                // Preparar a QComboBox com a lista de produtos
-                QComboBox* cmbProdutos = new QComboBox();
-                QMap<QString, QPair<QString, QString>> produtos = listaProdutosDisponiveis();
-                cmbProdutos->addItem("", QVariant());
-                for(auto item = produtos.begin(); item != produtos.end(); item++) {
-                    cmbProdutos->addItem(item.key(), QVariant(item.value().first + ";" + item.value().second));
-                }
-
-                // apresentar o produto correto na QComboBox
                 QString codigoProduto = obterDetalhesEncomenda.value("Codigo_Produto").toString();
-                int index = cmbProdutos->findText(codigoProduto);
-                if (index != -1) cmbProdutos->setCurrentIndex(index);
-
-                // Adicionar a QComboBox à primeira coluna
-                ui->tableWidget_ProdutosEnc->setCellWidget(novaLinha, 0, cmbProdutos);
-                cmbProdutos->setProperty("linha", novaLinha);
-                connect(cmbProdutos, SIGNAL(currentIndexChanged(int)), this, SLOT(atualizarProdutoEPreco(int)));
-                */
-
-                QString codigoProduto = obterDetalhesEncomenda.value("Codigo_Produto").toString();
-                QComboBox* cmbProdutos = new QComboBox();
+                QComboBox* cmbProdutos = new QComboBox(ui->tableWidget_ProdutosEnc);
                 cmbProdutos->addItem(codigoProduto);
                 cmbProdutos->setCurrentIndex(0);
                 ui->tableWidget_ProdutosEnc->setCellWidget(novaLinha, 0, cmbProdutos);
                 cmbProdutos->setProperty("linha", novaLinha);
 
+                disconnect(ui->tableWidget_ProdutosEnc, &QTableWidget::cellChanged, this, &Encomendas::calcularValorTotalLinha);
                 ui->tableWidget_ProdutosEnc->setItem(novaLinha, 1, new QTableWidgetItem(obterDetalhesEncomenda.value("Produto").toString())); // produto
                 ui->tableWidget_ProdutosEnc->setItem(novaLinha, 2, new QTableWidgetItem(obterDetalhesEncomenda.value("Qtd_produto").toString())); // quantidade
                 //substituir o ponto pela vírgula
@@ -694,16 +685,18 @@ void Encomendas::on_tableWidget_encomendas_cellDoubleClicked()
                 ui->tableWidget_ProdutosEnc->setItem(novaLinha, 2, itemQuantidade);
                 //qDebug() << "Quantidade inicial armazenada linha " << novaLinha <<": " << itemQuantidade->data(Qt::UserRole + 2).toInt();
                 //qDebug() << "ID_EncomendaDetalhe PONTO 2 linha " << novaLinha <<": " << itemIDEncDetalhe->data(Qt::UserRole + 1).toInt();
+                novaLinha++;
+                calcularValorTotalCabecalho();
             }
         } else {
-            qDebug() << "Erro ao obter detalhes das encomendas: " << obterDetalhesEncomenda.lastError().text();
+            qDebug() << "Erro ao obter os detalhes da encomenda: " << obterDetalhesEncomenda.lastError().text();
         }
     }
     else
     {
         QMessageBox::critical(this, "Atenção", "Erro ao carregar dados da encomenda!");
     }
-    connect(ui->tableWidget_ProdutosEnc, &QTableWidget::cellChanged, this, &Encomendas::calcularValorTotalLinha);    
+    connect(ui->tableWidget_ProdutosEnc, &QTableWidget::cellChanged, this, &Encomendas::calcularValorTotalLinha);
 }
 
 void Encomendas::on_btnModificar_clicked()
@@ -718,15 +711,16 @@ void Encomendas::on_btnModificar_clicked()
     if(!ui->txtRegisto->text().isEmpty()) //Encomenda já existe na base de dados
     {
         ui->cmbClientes->setEnabled(false);
-        ui->btnAdLinha->setEnabled(false);
-        ui->btnEliminaLinha->setEnabled(false);
+    }
+    else{
+        ui->btnAdLinha->setHidden(false);
+        ui->btnEliminaLinha->setHidden(false);
     }
 }
 
 // atualizar o registo da encomenda na base de dados
 //NOTA: só é possível alterar encomendas não expedidas, parcialmente ou totalmente e que não contenham produtos em produção - CORRIGIR
-// - Acrescentar novos produtos à encomenda, eliminar produtos exitentes,
-// neste momento só é possível atualizar as quantidades de produto - CORRIGIR
+// neste momento só é possível atualizar as quantidades de produto
 void Encomendas::atualizarEncomenda()
 {
     int idEncomenda = idEncomendaSelecionada.toInt();
@@ -780,7 +774,7 @@ void Encomendas::atualizarEncomenda()
         quantProdutoInicial = itemQuantidade->data(Qt::UserRole + 2).toInt();
 
 
-        QComboBox* cmbProdutos = qobject_cast<QComboBox*>(ui->tableWidget_ProdutosEnc->cellWidget(linha, 0));
+        QComboBox* cmbProdutos = qobject_cast<QComboBox*>(ui->tableWidget_ProdutosEnc->cellWidget(linha, 0)); //combobox existente
         // obter o código do item selecionado
         QString codigo = "";
         if (cmbProdutos) {
@@ -838,8 +832,8 @@ void Encomendas::atualizarEncomenda()
         QSqlQuery atualizarEncomendaDetalhe;
         // Alterar na tabela 'encomendaDetalhe'
         atualizarEncomendaDetalhe.prepare("UPDATE encomendaDetalhe SET "
-                                       "Valor = :Valor, Qtd_produto = :Qtd_produto "
-                                       "WHERE ID_EncomendaDetalhe = :ID_EncomendaDetalhe ");
+                                          "Valor = :Valor, Qtd_produto = :Qtd_produto "
+                                          "WHERE ID_EncomendaDetalhe = :ID_EncomendaDetalhe ");
         atualizarEncomendaDetalhe.bindValue(":ID_EncomendaDetalhe", idEncomendaDetalhe);
         atualizarEncomendaDetalhe.bindValue(":Valor", valorProduto);
         atualizarEncomendaDetalhe.bindValue(":Qtd_produto", quantProdutoAtual);
@@ -876,7 +870,7 @@ void Encomendas::atualizarEncomenda()
     habilitarCampos();
 }
 
-// NOTA: só é possível eliminar encomendas não expedidas, parcialmente ou totalmente e que não contenham produtos em produção - CORRIGIR
+// NOTA: só é possível eliminar encomendas não expedidas, parcialmente ou totalmente, e que não contenham produtos em produção - CORRIGIR
 void Encomendas::on_btnEliminar_clicked()
 {
     if (ui->txtRegisto->text().isEmpty()){
@@ -1019,6 +1013,14 @@ void Encomendas::on_btnPesquisar_clicked()
     }
 }
 
+void Encomendas::on_btnLimparPesquisa_clicked()
+{
+    ui->txtCodigo_2->clear();
+    ui->txtCliente->clear();
+    ui->cmbPesquisar->setCurrentIndex(0);
+    carregarDadosEncomendas();
+}
+
 bool Encomendas::verificarCamposCabecalho()
 {
     if(ui->cmbClientes->currentIndex() == 0){
@@ -1044,9 +1046,28 @@ bool Encomendas::verificarCamposCabecalho()
 // CORRIGIR
 bool Encomendas::verificarCamposLinhas()
 {
-   // verificar se os campos estão todos preenchidos e verificar se tem produtos repetidos
+    // verificar se os campos estão todos preenchidos e verificar se tem produtos repetidos
 
     return true;
+}
+
+void Encomendas::on_calendarWidget_selectionChanged()
+{
+    QDate date = ui->calendarWidget->selectedDate();
+    QString dataFormato = date.toString("dd-MM-yyyy");
+    ui->txtDataEntrega->setText(dataFormato);
+}
+
+void Encomendas::on_txtDataEntrega_editingFinished()
+{
+    QString data = ui->txtDataEntrega->text();
+    QDate date = QDate::fromString(data, "dd-MM-yyyy");
+
+    if (date.isValid()) {
+        ui->calendarWidget->setSelectedDate(date);
+    } else {
+        qDebug() << "A Data fornecida é inválida.";
+    }
 }
 
 void Encomendas::limparCampos()
@@ -1066,9 +1087,9 @@ void Encomendas::limparCampos()
 
 void Encomendas::desabilitarCampos()
 {
-    ui->txtDataEntrega->setEnabled(false);
+    ui->txtDataEntrega->setReadOnly(true);
     ui->cmbClientes->setEnabled(false);
-    ui->txtNome->setEnabled(false);
+    ui->txtNome->setReadOnly(true);
     ui->calendarWidget->setEnabled(false);
     ui->tableWidget_ProdutosEnc->setEnabled(false);
     ui->btnAdLinha->setEnabled(false);
@@ -1077,7 +1098,7 @@ void Encomendas::desabilitarCampos()
 
 void Encomendas::habilitarCampos()
 {
-    ui->txtDataEntrega->setEnabled(true);
+    ui->txtDataEntrega->setReadOnly(false);
     ui->cmbClientes->setEnabled(true);
     ui->txtNome->setReadOnly(true);
     ui->calendarWidget->setEnabled(true);
@@ -1085,15 +1106,3 @@ void Encomendas::habilitarCampos()
     ui->btnAdLinha->setEnabled(true);
     ui->btnEliminaLinha->setEnabled(true);
 }
-
-void Encomendas::on_btnLimparPesquisa_clicked()
-{
-    ui->txtCodigo_2->clear();
-    ui->txtCliente->clear();
-    ui->cmbPesquisar->setCurrentIndex(0);
-    carregarDadosEncomendas();
-}
-
-
-
-

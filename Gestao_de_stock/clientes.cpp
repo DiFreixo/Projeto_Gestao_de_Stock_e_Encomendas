@@ -73,7 +73,6 @@ void Clientes::on_btnGuardar_clicked()
     QString endereco = ui->txtEndereco->toPlainText().trimmed();
     QString observacoes = ui->txtObservacoes->toPlainText().trimmed();
 
-
     // verificar se o NIF do cliente já existe na base de dados,
     QString queryStr = "SELECT COUNT(*) FROM cliente WHERE NIF = :nifNumero";
     // se o cliente já estiver registado na base de dados, esse registo é ignorado,
@@ -139,7 +138,6 @@ void Clientes::on_btnGuardar_clicked()
 
         limparCampos();
         habilitarCampos();
-
     }
 
     ui->btnVoltar_clientes->setEnabled(true);
@@ -188,7 +186,6 @@ void Clientes::carregarDadosClientes()
             }
             linha++;
         }
-
         ui->lblTotalClientes->setText("Clientes: " + QString::number(linha));
 
         //colocar os títulos das colunas igual à ordem da query 'obterDados'

@@ -11,7 +11,7 @@ class ReportDialog : public QDialog {
 
 public:
     explicit ReportDialog(const QString &reportContent, QWidget *parent = nullptr) : QDialog(parent) {
-        setWindowTitle("Relatório da Ordem de Produção");
+        setWindowTitle("Relatório");
         setWindowIcon(QIcon(":/img/img/glowglass.png"));
         setStyleSheet("background-color: #ADCE74;");
         resize(400, 300);

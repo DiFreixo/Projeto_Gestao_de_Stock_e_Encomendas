@@ -299,7 +299,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Código</string>
+       <string>Nr. Encomenda</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="txtCliente">

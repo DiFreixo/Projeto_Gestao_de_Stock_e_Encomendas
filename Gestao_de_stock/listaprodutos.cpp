@@ -16,6 +16,7 @@ ListaProdutos::ListaProdutos(QWidget *parent)
     ui->setupUi(this);
 
     carregarDadosProdutos();
+
     // inicializa na página 'Lista de produtos'
     ui->stackedWidget->setCurrentIndex(0);
     // conecta o sinal clicked() do QRadioButton ao slot correspondente
@@ -103,6 +104,7 @@ void ListaProdutos::on_btnVoltar_produtos_clicked()
     ui->stackedWidget->setCurrentIndex(0);
 }
 
+//método para validar os valores inseridos nas dimensões do produto
 void ListaProdutos::validarCampo(QLineEdit *campo, int min, int max, const QString &mensagemErro)
 {
     bool ok;
@@ -232,7 +234,6 @@ void ListaProdutos::on_btnGuardar_clicked()
             return;
         }
 
-        // bd.commit(); // Se tudo estiver OK, confirma a transação
         qDebug() << "Produto e detalhes inseridos com sucesso.";
         QMessageBox::information(this, "Aviso", "Registo guardado com sucesso!");
 
@@ -408,11 +409,11 @@ void ListaProdutos::on_tableWidget_ListaProdutos_cellDoubleClicked()
 
     QSqlQuery obterDados;
     obterDados.prepare("SELECT produto.*, produtodetalhe.Gama, produtodetalhe.Cor, produtodetalhe.Volume, produtodetalhe.Peso, produtodetalhe.Altura, "
-                       "produtodetalhe.Diametro, stock.Qtd_total, stock.Qtd_reservada, stock.Qtd_disponivel, expedicaodetalhe.Qtd_produto, expedicaodetalhe.Valor "
+                       "produtodetalhe.Diametro, stock.Qtd_total, stock.Qtd_reservada, stock.Qtd_disponivel, expedicaodetalhe.Qtd_produto "
                        "FROM produto LEFT JOIN produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
                        "LEFT JOIN stock ON produto.ID_Produto = stock.ID_Produto "
                        "LEFT JOIN expedicaodetalhe ON produto.ID_Produto = expedicaodetalhe.ID_Produto "
-                       "WHERE produto.ID_Produto = :idProduto;");
+                       "WHERE produto.ID_Produto = :idProduto;");     
     obterDados.bindValue(":idProduto", idProduto);
 
     if(obterDados.exec() && obterDados.first())
@@ -429,10 +430,6 @@ void ListaProdutos::on_tableWidget_ListaProdutos_cellDoubleClicked()
         ui->txtQtdTotal->setText(obterDados.value("Qtd_total").toString());
         ui->txtQtdReservada->setText(obterDados.value("Qtd_reservada").toString());
         ui->txtQtdDisponivel->setText(obterDados.value("Qtd_disponivel").toString());
-        //  ################ CORRIGIR ###########################
-        // Considerar as encomendas expedidas -> é necessário verificar todas as expedições
-        ui->txtTotalVendido->setText(obterDados.value("Qtd_produto").toString());;
-        ui->txtTotalVendas->setText(obterDados.value("Valor").toString());;
 
         QString valorGama = obterDados.value("Gama").toString();
         QList<QAbstractButton *> gamas = ui->buttonGroup_Gama->buttons();
@@ -455,6 +452,13 @@ void ListaProdutos::on_tableWidget_ListaProdutos_cellDoubleClicked()
         QString precoVendaSemPonto = obterDados.value("Preco_venda").toString();
         precoVendaSemPonto.replace('.', ',');
         ui->txtPrecoVenda->setText(precoVendaSemPonto);
+
+        //  ################ CORRIGIR ###########################
+        // Considerar as encomendas expedidas -> é necessário verificar todas as expedições desse produto
+        ui->txtTotalVendido->setText(obterDados.value("Qtd_produto").toString());;
+        int totalVendas = obterDados.value("Qtd_produto").toInt() * precoVendaSemPonto.toInt();
+        ui->txtTotalVendas->setText(QString::number(totalVendas));
+
         // formatar data
         QString dataStr = obterDados.value("Data_criacao").toString();
         QDateTime dataHora = QDateTime::fromString(dataStr, Qt::ISODate);

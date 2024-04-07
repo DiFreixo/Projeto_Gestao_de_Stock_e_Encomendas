@@ -91,20 +91,11 @@ MainWindow::~MainWindow()
     delete ui;  
 }
 
-
 void MainWindow::on_btnProdutos_clicked()
 {
-    //mostrarListaProdutos();
     ui->stackedWidget->setCurrentIndex(1);
     listaProdutos->carregarDadosProdutos();
 }
-
-/*
-void MainWindow::mostrarListaProdutos() {
-
-    ui->stackedWidget->setCurrentIndex(1);
-    listaProdutos->carregarDadosProdutos();
-}*/
 
 void MainWindow::on_btnProducao_clicked()
 {
@@ -133,6 +124,7 @@ void MainWindow::on_btnEncomendas_clicked()
 void MainWindow::on_btnExpedicao_clicked()
 {
     ui->stackedWidget->setCurrentIndex(6);
+    expedicao->carregarDadosExpedicao();
 }
 
 void MainWindow::moveInicio()

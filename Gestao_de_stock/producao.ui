@@ -52,7 +52,7 @@
    <property name="currentIndex">
     <number>1</number>
    </property>
-   <widget class="QWidget" name="page1_ListarEncomendas">
+   <widget class="QWidget" name="page1_ListarOPs">
     <widget class="QLabel" name="label">
      <property name="geometry">
       <rect>
@@ -378,7 +378,7 @@ background-color: rgb(196, 196, 196);</string>
      </widget>
     </widget>
    </widget>
-   <widget class="QWidget" name="page2_RegistarEncomendas">
+   <widget class="QWidget" name="page2_RegistarOPs">
     <widget class="QLabel" name="label_8">
      <property name="geometry">
       <rect>
@@ -801,7 +801,7 @@ background-color: rgb(208, 208, 208);
       </rect>
      </property>
      <property name="text">
-      <string>Status OP</string>
+      <string>Estado OP</string>
      </property>
     </widget>
     <widget class="QLineEdit" name="txtStatusOP">

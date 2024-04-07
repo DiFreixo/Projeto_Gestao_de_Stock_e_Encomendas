@@ -144,7 +144,213 @@
        <normaloff>:/img/img/Add.png</normaloff>:/img/img/Add.png</iconset>
      </property>
     </widget>
-    <widget class="QTableWidget" name="tableWidget_expedicao">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>460</y>
+       <width>951</width>
+       <height>191</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <fontweight>DemiBold</fontweight>
+      </font>
+     </property>
+     <property name="title">
+      <string>Pesquisar por:</string>
+     </property>
+     <widget class="QComboBox" name="cmbExpedida">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>60</y>
+        <width>121</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:#DAF7D9;</string>
+      </property>
+      <item>
+       <property name="text">
+        <string/>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Não</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Sim</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="label_3">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>40</y>
+        <width>151</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Expedida</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lblTotalExpedicoes">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>160</y>
+        <width>221</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <fontweight>ExtraBold</fontweight>
+       </font>
+      </property>
+      <property name="text">
+       <string>Expedições:</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btnPesquisar">
+      <property name="geometry">
+       <rect>
+        <x>350</x>
+        <y>110</y>
+        <width>51</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <fontweight>DemiBold</fontweight>
+       </font>
+      </property>
+      <property name="cursor">
+       <cursorShape>PointingHandCursor</cursorShape>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(196, 196, 196);</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset resource="imagens.qrc">
+        <normaloff>:/img/img/pesquisar.png</normaloff>:/img/img/pesquisar.png</iconset>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_4">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>40</y>
+        <width>121</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Nr. Expedição</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="txtCliente">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>110</y>
+        <width>301</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:#DAF7D9;</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_5">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>90</y>
+        <width>121</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Cliente</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="txtNrExpedicao">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>60</y>
+        <width>91</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:#DAF7D9;</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btnLimparPesquisa">
+      <property name="geometry">
+       <rect>
+        <x>420</x>
+        <y>110</y>
+        <width>51</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <fontweight>DemiBold</fontweight>
+       </font>
+      </property>
+      <property name="cursor">
+       <cursorShape>PointingHandCursor</cursorShape>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">
+background-color: rgb(196, 196, 196);</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset resource="imagens.qrc">
+        <normaloff>:/img/img/Refresh.png</normaloff>:/img/img/Refresh.png</iconset>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QTableWidget" name="tableWidget_expedicoes">
      <property name="geometry">
       <rect>
        <x>30</x>
@@ -156,6 +362,15 @@
      <property name="styleSheet">
       <string notr="true">background-color: #E6F7E6;</string>
      </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>80</number>
+     </attribute>
+     <attribute name="horizontalHeaderHighlightSections">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="horizontalHeaderStretchLastSection">
+      <bool>true</bool>
+     </attribute>
     </widget>
    </widget>
    <widget class="QWidget" name="page2_RegistarExpedicoes">
@@ -184,7 +399,7 @@
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
-    <widget class="QPushButton" name="btnVoltar_expedicoes">
+    <widget class="QPushButton" name="btnVoltar_expedicao">
      <property name="geometry">
       <rect>
        <x>30</x>
@@ -215,6 +430,523 @@
      <property name="icon">
       <iconset resource="imagens.qrc">
        <normaloff>:/img/img/Previous.png</normaloff>:/img/img/Previous.png</iconset>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnModificar">
+     <property name="geometry">
+      <rect>
+       <x>890</x>
+       <y>250</y>
+       <width>96</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">	background-color: #F09200;
+	color: #004b23;
+	border: 1.5px solid #F09200;
+	border-style: outset;
+	border-radius: 5px;</string>
+     </property>
+     <property name="text">
+      <string> Alterar</string>
+     </property>
+     <property name="icon">
+      <iconset resource="imagens.qrc">
+       <normaloff>:/img/img/Modify.png</normaloff>:/img/img/Modify.png</iconset>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_9">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>130</y>
+       <width>81</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Registo</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_20">
+     <property name="geometry">
+      <rect>
+       <x>550</x>
+       <y>320</y>
+       <width>111</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Calendário</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_19">
+     <property name="geometry">
+      <rect>
+       <x>390</x>
+       <y>320</y>
+       <width>111</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Data Exp. Prevista</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnEliminar">
+     <property name="geometry">
+      <rect>
+       <x>890</x>
+       <y>310</y>
+       <width>96</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">	background-color: #F09200;
+	color: #004b23;
+	border: 1.5px solid #F09200;
+	border-style: outset;
+	border-radius: 5px;</string>
+     </property>
+     <property name="text">
+      <string> Eliminar</string>
+     </property>
+     <property name="icon">
+      <iconset resource="imagens.qrc">
+       <normaloff>:/img/img/Apagar.png</normaloff>:/img/img/Apagar.png</iconset>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtCodigo">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>150</y>
+       <width>113</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(208, 208, 208);</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="frame">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_10">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>130</y>
+       <width>141</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Nr. Expedição</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_18">
+     <property name="geometry">
+      <rect>
+       <x>390</x>
+       <y>260</y>
+       <width>111</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Data Registo</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnCancelar">
+     <property name="geometry">
+      <rect>
+       <x>890</x>
+       <y>190</y>
+       <width>96</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">	background-color: #F09200;
+	color: #004b23;
+	border: 1.5px solid #F09200;
+	border-style: outset;
+	border-radius: 5px;</string>
+     </property>
+     <property name="text">
+      <string> Cancelar</string>
+     </property>
+     <property name="icon">
+      <iconset resource="imagens.qrc">
+       <normaloff>:/img/img/Delete.png</normaloff>:/img/img/Delete.png</iconset>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtQtdTotal">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>340</y>
+       <width>113</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(208, 208, 208);</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="frame">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtStatusExpedicao">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>540</x>
+       <y>150</y>
+       <width>112</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(208, 208, 208);</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="frame">
+      <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_11">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>260</y>
+       <width>191</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Cliente</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtNome">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>280</y>
+       <width>261</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:#DAF7D9;</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtDataCriacao">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>390</x>
+       <y>280</y>
+       <width>112</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(208, 208, 208);</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="frame">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="lblQtdTotalExpedir">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>320</y>
+       <width>131</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Quant. Total a expedir</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_12">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>200</y>
+       <width>91</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>NIF</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtRegisto">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>150</y>
+       <width>113</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
+background-color: rgb(208, 208, 208);
+</string>
+     </property>
+     <property name="frame">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="txtDataExpedicao">
+     <property name="geometry">
+      <rect>
+       <x>390</x>
+       <y>340</y>
+       <width>112</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:#DAF7D9;</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnExpedicao">
+     <property name="geometry">
+      <rect>
+       <x>730</x>
+       <y>80</y>
+       <width>96</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">	background-color:#A4CE95;
+	color: #004b23;
+	border: 1px solid  #004b23 ;
+	border-style: outset;
+	border-radius: 1px;</string>
+     </property>
+     <property name="text">
+      <string>Expedição</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="cmbNif">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>220</y>
+       <width>151</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:#DAF7D9;</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_43">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>340</y>
+       <width>51</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>un</string>
+     </property>
+    </widget>
+    <widget class="QDateEdit" name="dateEdit">
+     <property name="geometry">
+      <rect>
+       <x>550</x>
+       <y>340</y>
+       <width>111</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:#DAF7D9;</string>
+     </property>
+     <property name="wrapping">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="readOnly">
+      <bool>false</bool>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::UpDownArrows</enum>
+     </property>
+     <property name="displayFormat">
+      <string>dd-MM-yyyy</string>
+     </property>
+     <property name="calendarPopup">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btnGuardar">
+     <property name="geometry">
+      <rect>
+       <x>890</x>
+       <y>130</y>
+       <width>96</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">	background-color: #F09200;
+	color: #004b23;
+	border: 1.5px solid #F09200;
+	border-style: outset;
+	border-radius: 5px;</string>
+     </property>
+     <property name="text">
+      <string> Guardar</string>
+     </property>
+     <property name="icon">
+      <iconset resource="imagens.qrc">
+       <normaloff>:/img/img/Save.png</normaloff>:/img/img/Save.png</iconset>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_52">
+     <property name="geometry">
+      <rect>
+       <x>540</x>
+       <y>130</y>
+       <width>111</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Expedida</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="lblErro">
+     <property name="geometry">
+      <rect>
+       <x>590</x>
+       <y>16</y>
+       <width>371</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QTreeView" name="treeViewProdutos">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>390</y>
+       <width>801</width>
+       <height>260</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:#DAF7D9;</string>
      </property>
     </widget>
    </widget>

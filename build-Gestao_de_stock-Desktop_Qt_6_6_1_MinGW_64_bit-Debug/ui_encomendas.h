@@ -430,7 +430,7 @@ public:
         label_3->setText(QCoreApplication::translate("Encomendas", "Expedida", nullptr));
         lblTotalEncomedas->setText(QCoreApplication::translate("Encomendas", "Encomendas:", nullptr));
         btnPesquisar->setText(QString());
-        label_4->setText(QCoreApplication::translate("Encomendas", "C\303\263digo", nullptr));
+        label_4->setText(QCoreApplication::translate("Encomendas", "Nr. Encomenda", nullptr));
         label_5->setText(QCoreApplication::translate("Encomendas", "Cliente", nullptr));
         btnLimparPesquisa->setText(QString());
         label_8->setText(QCoreApplication::translate("Encomendas", "Registo de Encomendas", nullptr));
