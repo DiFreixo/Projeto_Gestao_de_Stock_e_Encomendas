@@ -93,6 +93,7 @@ void Encomendas::on_btnNovo_encomenda_clicked()
 
 void Encomendas::on_btnVoltar_encomendas_clicked()
 {
+    limparCampos();
     ui->stackedWidget->setCurrentIndex(0);
 }
 

@@ -84,6 +84,7 @@ void Producao::on_btnInicio_producao_clicked()
 
 void Producao::on_btnVoltar_producao_clicked()
 {
+    limparCampos();
     ui->stackedWidget->setCurrentIndex(0);
 }
 
@@ -97,6 +98,8 @@ void Producao::on_btnNovo_OP_clicked()
     ui->btnGuardar->setEnabled(true);
     ui->btnCancelar->setEnabled(true);
     ui->btnModificar->setEnabled(false);
+    ui->btnProducao->setEnabled(false);
+    ui->btnFechar->setEnabled(false);
     preencherComboboxNrEncomenda(false);
 }
 
@@ -534,6 +537,7 @@ void Producao::on_tableWidget_OrdemProd_cellDoubleClicked()
     statusOP = ui->tableWidget_OrdemProd->item(linhaAtual, 6)->text();
     if(statusOP == "Planeada"){
         ui->btnProducao->setEnabled(true);
+        ui->btnFechar->setEnabled(false);
         ui->btnVoltar_producao->setEnabled(true);
         ui->btnEliminar->setEnabled(true);
         ui->btnGuardar->setEnabled(false);
@@ -719,6 +723,8 @@ void Producao::on_btnEliminar_clicked()
             ui->btnGuardar->setEnabled(false);
             ui->btnCancelar->setEnabled(false);
             ui->btnModificar->setEnabled(false);
+            ui->btnFechar->setEnabled(false);
+            ui->btnProducao->setEnabled(false);
 
             limparCampos();
             desabilitarCampos();
@@ -995,7 +1001,7 @@ void Producao::carregarDadosProducao()
 
         //colocar os títulos das colunas igual à ordem da query 'obterDados'
         QStringList titulos;
-        titulos = {"Registo", "Nr. OP", "Nr. Encomenda", "Cód. Produto", "Produto", "Quantidade (un)", "Status", "Data OP"};
+        titulos = {"Registo", "Nr. OP", "Nr. Encomenda", "Cód. Produto", "Produto", "Quantidade (un)", "Estado", "Data OP"};
         ui->tableWidget_OrdemProd->setHorizontalHeaderLabels(titulos);
         // formatar título
         ui->tableWidget_OrdemProd->horizontalHeader()->setStyleSheet("QHeaderView::section {color: white; background-color: #004b23; font: bold 10px}");

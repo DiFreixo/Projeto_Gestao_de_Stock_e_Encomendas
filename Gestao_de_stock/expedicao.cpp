@@ -81,17 +81,18 @@ void Expedicao::on_btnNovo_expedicao_clicked()
 
 void Expedicao::on_btnVoltar_expedicao_clicked()
 {
+    limparCampos();
     ui->stackedWidget->setCurrentIndex(0);
 
-    // reiniciar o modeloTreeView
+    // reiniciar o 'modeloTreeView'
     atualizarModeloTreeView();
 
-    // Limpar o modelo modeloTableView ao sair da página de registo de expedições
+    // Limpar o modelo 'modeloTableView' ao sair da página de registo de expedições
     if (modeloTableView != nullptr) {
+        tableViewProdutos->setVisible(false);
         delete modeloTableView;
         modeloTableView = nullptr;
     }
-    tableViewProdutos->setVisible(false);
 }
 
 // preencher a combobox com os NIF dos clientes
@@ -149,7 +150,7 @@ void Expedicao::atualizarModeloTreeView()
         "QHeaderView::section {color: white; background-color: #004b23; font: bold 10px;}"
         "QTreeView {border: 2px solid #004b23;}"
         );
-    // aplicar o modelo a treeView
+    // aplicar o modelo à treeView
     ui->treeViewProdutos->setModel(modeloTreeView);
     // redimensionar as colunas
     ui->treeViewProdutos->header()->resizeSection(0, 180);
@@ -194,12 +195,12 @@ void Expedicao::apresentarEncomendasDisponiveis(const QString &nif)
 {
     atualizarModeloTreeView();
     // apresentar as encomendas do cliente para o nif escolhido
-   // apenas ecomendas não expedidas e parcialmente expedidas e que tenham pelo menos uma ordem de produção associada
+   // apenas ecomendas que ainda não tenham uma expedição associada
     QSqlQuery obterEncomendas;
     obterEncomendas.prepare("SELECT Num_Encomenda FROM encomenda "
-                            "LEFT JOIN cliente ON encomenda.ID_Cliente = cliente.ID_Cliente "
-                            "INNER JOIN producao ON encomenda.ID_Encomenda = producao.ID_Encomenda "
-                            "WHERE cliente.NIF = :NIF AND encomenda.Expedida <> 'Sim' GROUP BY Num_Encomenda;");
+                            "INNER JOIN cliente ON encomenda.ID_Cliente = cliente.ID_Cliente "
+                            "INNER JOIN encomendaDetalhe ON encomenda.ID_Encomenda = encomendaDetalhe.ID_Encomenda "
+                            "WHERE cliente.NIF = :NIF AND encomendaDetalhe.Expedido <> 1 GROUP BY Num_Encomenda;");
     obterEncomendas.bindValue(":NIF", nif);
 
     if(obterEncomendas.exec())
@@ -216,8 +217,8 @@ void Expedicao::apresentarEncomendasDisponiveis(const QString &nif)
             // apenas produtos da encomenda não expedidos e que se encontram em produção
             QSqlQuery obterProdutos;
             obterProdutos.prepare("SELECT produto.Codigo_Produto, produto.Produto, encomendaDetalhe.Qtd_produto FROM produto "
-                                  "LEFT JOIN encomendaDetalhe ON produto.ID_Produto = encomendaDetalhe.ID_Produto "
-                                  "LEFT JOIN encomenda ON encomendaDetalhe.ID_Encomenda = encomenda.ID_Encomenda "
+                                  "INNER JOIN encomendaDetalhe ON produto.ID_Produto = encomendaDetalhe.ID_Produto "
+                                  "INNER JOIN encomenda ON encomendaDetalhe.ID_Encomenda = encomenda.ID_Encomenda "
                                   "WHERE Num_Encomenda = :Num_Encomenda AND encomendaDetalhe.Expedido = 0 "
                                   "AND encomendaDetalhe.Produzido = 1;");
             obterProdutos.bindValue(":Num_Encomenda", numeroEncomenda);
@@ -624,66 +625,26 @@ void Expedicao::on_btnModificar_clicked()
     atualizarModeloTreeView();
 }
 
- // CORRIGIR
-// Muda o status da Expedicão de 'Não' para 'Sim'
-// Saída do produto do stock - atualizar a quantidade reservada e total
-// Apenas posso carregar no botão expedição quando a OP estiver no estado fechada (o produto já deu entrada em stock)
+// Muda o status da Expedicão de 'Não' para 'Sim'.
+// Saída do produto do stock - atualiza a quantidade do produto em stock (total, reservada e disponível).
+// Apenas posso carregar no botão expedição quando a OP estiver no estado fechada (o produto já deu entrada em stock).
+// Atualiza o estado da encomenda.Expedida de 'Não' para 'Parcial' ou 'Total'.
 void Expedicao::on_btnExpedicao_clicked()
-{/*
+{
+    /*
     int idExpedicao = idExpedicaoSelecionado.toInt();
 
-    // ligação à base de dados
-    QSqlDatabase bd = QSqlDatabase::database();
-    bd.transaction(); // Inicia uma transação
+    //1. Verifcar se existem produtos que ainda não deram entrada em Stock, ou seja, produtos com producao.Status_OP <> 'Fechada'
 
-
-    // alterar o status da Expedição e registar a data currente
-    QSqlQuery updateStatusExpedicao;
-    // Alterar na tabela 'exdicao'
-    updateStatusExpedicao.prepare("UPDATE expedicao SET Expedida = 'Sim' WHERE  ID_Expedicao = :ID_Expedicao;");
-    updateStatusExpedicao.bindValue(":ID_Expedicao", idExpedicao);
-
-    if (!updateStatusExpedicao.exec()) {
-        qDebug() << "Falha ao atualizar dados na tabela Expedicao:" << updateStatusExpedicao.lastError().text();
-        bd.rollback();
-        return;
-    }
-
-    if (!bd.commit()) {
-        QMessageBox::critical(this, "Erro na base de dados", "Falha ao alterar o Estado da Expedição."
-                                                             "\nPor favor, contacte o suporte!");
-        return;
-    }
-
-    qDebug() << "Alterações guardadas com sucesso";
-
-    // diminuir a quantidade total de produto em stock quantidade reservda
-    QSqlQuery atualizarStock;
-
-
-    //registar a data corrente na tabela expedição da base de dados
-    // atualizar o status expedicção pARA SIM
-
-    // exibir um relatório no ecrã
-    QString reportHtml = "<h2>Expedição validada</h2>"
-                         + QString( "<p><b>Número da Expedição:</b> %1</p>").arg(numOP)
-                         + QString( "<p><b>Cliente:</b> %1</p>").arg(numOP) +
-                         "<p><b>Stock:</b></p>"
-                         + QString("<p> - Saída de %1 unidades do Produto %2</p>").arg(quantProduto).arg(codProduto)
-                          // resto dos produtos
-
-                         + QString("<p><b>Data:</b> %1</p>").arg(QDate::currentDate().toString("dd-MM-yyyy"));
-
-
-    ReportDialog dialog(reportHtml);
-    dialog.exec();
-
-
-    ui->lblQtdTotalExpedir->setText("Quant. Total Expedida");
-    apresentarInfoExpedicao(idExpedicao);
-    carregarDadosExpedicao();
-    ui->btnExpedicao->setEnabled(false);
+    QSqlQuery verificarStatusOP;    //CORRIGIR
 */
+
+
+
+
+
+
+
 }
 
 void Expedicao::on_tableWidget_expedicoes_cellDoubleClicked()

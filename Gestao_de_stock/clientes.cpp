@@ -60,6 +60,7 @@ void Clientes::on_btnNovo_cliente_clicked()
 
 void Clientes::on_btnVoltar_clientes_clicked()
 {
+    limparCampos();
     ui->stackedWidget->setCurrentIndex(0);
 }
 

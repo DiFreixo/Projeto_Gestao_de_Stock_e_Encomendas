@@ -88,6 +88,7 @@ void ListaProdutos::on_btnInicio_produtos_clicked()
 
 void ListaProdutos::on_btnNovo_produto_clicked()
 {
+    limparCampos();
     ui->stackedWidget->setCurrentIndex(1);
     limparCampos();
     habilitarCampos();
