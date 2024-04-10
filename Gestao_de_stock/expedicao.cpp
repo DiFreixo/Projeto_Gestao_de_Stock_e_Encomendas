@@ -126,7 +126,8 @@ void Expedicao::preencherComboboxNif(bool mostrarTodosNifs = false)
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar dados do cliente!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar dados do cliente."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar dados do cliente:" << obterNifCliente.lastError().text();
     }
 }
@@ -182,7 +183,8 @@ void Expedicao::on_cmbNif_currentTextChanged(const QString &nif)
         QString nomeCliente = obterNome.value("Cliente").toString();
         ui->txtNome->setText(nomeCliente);
     } else {
-        QMessageBox::warning(this, "Atenção", "Erro ao obter o nome do cliente!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao apresentar o nome do cliente."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao obter o nome do cliente:" << obterNome.lastError().text();
         ui->txtNome->clear();
     }
@@ -247,7 +249,8 @@ void Expedicao::apresentarEncomendasDisponiveis(const QString &nif)
         }
     }
     else {
-        QMessageBox::critical(this, "Atenção", "Erro ao apresentar informação das Encomendas!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao apresentar informação das Encomendas."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar informação das Encomendas:" << obterEncomendas.lastError().text();
     }
 }
@@ -485,7 +488,6 @@ void Expedicao::on_btnGuardar_clicked()
     //habilitar o botão
     ui->btnExpedicao->setEnabled(true);
     desabilitarCampos();
-
     ui->btnVoltar_expedicao->setEnabled(true);
     ui->btnEliminar->setEnabled(false);
     ui->btnGuardar->setEnabled(false);
@@ -535,7 +537,7 @@ void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado)
     obterDados.prepare("SELECT expedicao.ID_Expedicao, expedicao.Num_Expedicao, cliente.NIF, cliente.Cliente, expedicao.Qtd_expedicao, "
                        "expedicao.Data_registo, expedicao.Data_expedicaoPrevista, expedicao.Expedida "
                        "FROM expedicao "
-                       "LEFT JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente "
+                       "INNER JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente "
                        "WHERE expedicao.ID_Expedicao = :ID_Expedicao;");
 
     obterDados.bindValue(":ID_Expedicao", idExpedicaoGerado);
@@ -548,9 +550,17 @@ void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado)
         // apresentar o nif do cliente no campo 'cmbNif'
         QString nifCliente = obterDados.value("NIF").toString();
         ui->cmbNif->setCurrentText(nifCliente);
-        ui->txtNome->setText(obterDados.value("Cliente").toString());
-        ui->txtQtdTotal->setText(obterDados.value("Qtd_expedicao").toString());
+        ui->txtNome->setText(obterDados.value("Cliente").toString());         
+        ui->txtQtdTotal->setText(obterDados.value("Qtd_expedicao").toString());        
         ui->txtStatusExpedicao->setText(obterDados.value("Expedida").toString());
+        // alterar o texto da label 'lblQtdTotalExpedir'
+        QString estado = "";
+        estado = obterDados.value("Expedida").toString();
+        if(estado == "Sim")
+        {
+            ui->lblQtdTotalExpedir->setText("Quant. Total Expedida");
+        }
+
         // formatar data do registo da expedicao
         QString dataStr = obterDados.value("Data_registo").toString();
         QDateTime dataHora = QDateTime::fromString(dataStr, Qt::ISODate);
@@ -573,8 +583,8 @@ void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado)
         QSqlQuery obterDetalhesExpedicao;
         obterDetalhesExpedicao.prepare("SELECT expedicaodetalhe.Qtd_produto, produto.Codigo_Produto, produto.Produto, encomenda.Num_Encomenda "
                                        "FROM expedicaodetalhe "
-                                       "LEFT JOIN produto ON expedicaodetalhe.ID_Produto = produto.ID_Produto "
-                                       "LEFT JOIN encomenda ON expedicaodetalhe.ID_Encomenda = encomenda.ID_Encomenda "
+                                       "INNER JOIN produto ON expedicaodetalhe.ID_Produto = produto.ID_Produto "
+                                       "INNER JOIN encomenda ON expedicaodetalhe.ID_Encomenda = encomenda.ID_Encomenda "
                                        "WHERE expedicaodetalhe.ID_Expedicao = :ID_Expedicao;");
         obterDetalhesExpedicao.bindValue(":ID_Expedicao", idExpedicaoGerado);
 
@@ -587,7 +597,6 @@ void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado)
                 novaLinha.append(new QStandardItem(obterDetalhesExpedicao.value("Num_Encomenda").toString()));
                 novaLinha.append(new QStandardItem(obterDetalhesExpedicao.value("Qtd_produto").toString()));
                 modeloTableView->appendRow(novaLinha);
-
             }
         } else {
             qDebug() << "Erro ao obter os detalhes da expedição: " << obterDetalhesExpedicao.lastError().text();
@@ -595,7 +604,8 @@ void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado)
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar a informação da Expedição!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação da Expedição."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar a informação da Expedição!:" << obterDados.lastError().text();
     }
 }
@@ -621,30 +631,262 @@ void Expedicao::on_btnModificar_clicked()
     ui->btnModificar->setEnabled(false);
     ui->btnExpedicao->setEnabled(false);
     habilitarCampos();
-
     atualizarModeloTreeView();
 }
 
-// Muda o status da Expedicão de 'Não' para 'Sim'.
-// Saída do produto do stock - atualiza a quantidade do produto em stock (total, reservada e disponível).
+// Muda o status da Expedição de 'Não' para 'Sim'.
 // Apenas posso carregar no botão expedição quando a OP estiver no estado fechada (o produto já deu entrada em stock).
-// Atualiza o estado da encomenda.Expedida de 'Não' para 'Parcial' ou 'Total'.
+// Saída do produto do stock - atualiza a quantidade do produto em stock (total, reservada e disponível).
 void Expedicao::on_btnExpedicao_clicked()
 {
-    /*
     int idExpedicao = idExpedicaoSelecionado.toInt();
 
     //1. Verifcar se existem produtos que ainda não deram entrada em Stock, ou seja, produtos com producao.Status_OP <> 'Fechada'
+    QSqlQuery verificarStatusOP;
+    verificarStatusOP.prepare("SELECT produto.Codigo_Produto, encomenda.Num_Encomenda "
+                              "FROM producao "
+                              "INNER JOIN encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
+                              "INNER JOIN producaoDetalhe ON producao.ID_Producao = producaoDetalhe.ID_Producao "
+                              "INNER JOIN produto ON producaoDetalhe.ID_Produto = produto.ID_Produto "
+                              "INNER JOIN expedicaoDetalhe ON producaoDetalhe.ID_Produto = expedicaoDetalhe.ID_Produto "
+                              "WHERE expedicaoDetalhe.ID_Expedicao = :ID_Expedicao AND producao.ID_Encomenda =  expedicaoDetalhe.ID_Encomenda "
+                              "AND producao.Status_OP <> 'Fechada'");
+    verificarStatusOP.bindValue(":ID_Expedicao", idExpedicao);
 
-    QSqlQuery verificarStatusOP;    //CORRIGIR
-*/
+    if (verificarStatusOP.exec()) {
+        QString mensagem = "Produtos que ainda não deram entrada em stock:\n";
+        bool temProdutosPendentes = false;
 
+        while (verificarStatusOP.next()) {
+            temProdutosPendentes = true;
+            QString codigoProduto = verificarStatusOP.value("Codigo_Produto").toString();
+            QString numEncomenda = verificarStatusOP.value("Num_Encomenda").toString();
+            mensagem += " -> Produto: " + codigoProduto + ", Encomenda: " + numEncomenda + "\n";
+        }
 
+        // se existirem produtos pendentes, exibe a mensagem
+        if (temProdutosPendentes) {
+            QMessageBox::warning(this, "Produtos Pendentes", mensagem);
+            return;
+        }
+    } else {
+        qDebug() << "Erro ao verificar status das ordens de produção: " << verificarStatusOP.lastError().text();
+    }
 
+    // ligação à base de dados
+    QSqlDatabase bd = QSqlDatabase::database();
+    bd.transaction(); // Inicia uma transação
 
+    // 2. Alterar o status da Expedição e registar a data da expedição = data corrente
+    QSqlQuery updateStatusExpedicao;
+    // Alterar na tabela 'expedicao'
+    updateStatusExpedicao.prepare("UPDATE expedicao SET Expedida = 'Sim', Data_expedicao = CURRENT_TIMESTAMP "
+                                  "WHERE  ID_Expedicao = :ID_Expedicao;");
+    updateStatusExpedicao.bindValue(":ID_Expedicao", idExpedicao);
 
+    if (!updateStatusExpedicao.exec()) {
+        qDebug() << "Falha ao atualizar dados na tabela Expedicao:" << updateStatusExpedicao.lastError().text();
+        bd.rollback();
+        return;
+    }
 
+    //Enquanto existirem produtos na tabela expedicaoDetalhe, associados à expedição atual, atualizar o stock do produto
+    QSqlQuery obterProdutos;
+    obterProdutos.prepare("SELECT expedicaoDetalhe.ID_Produto, expedicaoDetalhe.Qtd_produto "
+                          "FROM expedicaoDetalhe "
+                          "WHERE expedicaoDetalhe.ID_Expedicao = :ID_Expedicao;");
+    obterProdutos.bindValue(":ID_Expedicao", idExpedicao);
+    if (!obterProdutos.exec())
+    {
+        qDebug() << "Erro ao obter a informação dos produtos da tabela expedicaoDetalhe: " << obterProdutos.lastError().text();
+        return;
+    }
+    while (obterProdutos.next()) {
+        int idProduto = obterProdutos.value("ID_Produto").toInt();
+        int quantidade = obterProdutos.value("Qtd_produto").toInt();
+        // 3. Saída do produto do stock - atualizar a quantidade do produto em stock (total, reservada e disponível).
+        QSqlQuery atualizarStock;
+        // atualizar na tabela 'stock'
+        atualizarStock.prepare("UPDATE stock SET Qtd_reservada = Qtd_reservada - :novaQuantidade, "
+                               "Qtd_total = Qtd_total - :novaQuantidade, "
+                               "Qtd_disponivel = (Qtd_total - :novaQuantidade) - (Qtd_reservada - :novaQuantidade) "
+                               "WHERE ID_Produto = :ID_Produto");
+        atualizarStock.bindValue(":novaQuantidade", quantidade);
+        atualizarStock.bindValue(":ID_Produto", idProduto);
+        // se a atualização do stock falhar
+        if (!atualizarStock.exec()) {
+            qDebug() << "Falha ao atualizar dados na tabela stock:" << atualizarStock.lastError().text();
+            // aterar  novamente o status da expedição para 'Não'
+            QSqlQuery updateStatusExpedicao;
+            updateStatusExpedicao.prepare("UPDATE expedicao SET Expedida = 'Não', Data_expedicao = NULL "
+                                          "WHERE  ID_Expedicao = :ID_Expedicao;");
+            updateStatusExpedicao.bindValue(":ID_Expedicao", idExpedicao);
 
+            if (!updateStatusExpedicao.exec()) {
+                qDebug() << "Falha ao atualizar dados na tabela Expedicao:" << updateStatusExpedicao.lastError().text();
+            }
+            bd.rollback(); // Desfaz a transação
+            return;
+        }
+    }
+
+    // verificar se o estado da encomenda foi atualizado com sucesso
+    bool sucesso = atualizarStatusEncomenda();
+    if (!sucesso) {
+        bd.rollback();
+        return;
+    }
+
+    if (!bd.commit()) {
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao realizar a Expedição."
+                                                             "\nPor favor, contacte o suporte!");
+        return;
+    }
+
+    qDebug() << "Alterações guardadas com sucesso";
+
+    relatorioExpedicao();
+
+    ui->btnExpedicao->setEnabled(false);
+    apresentarInfoExpedicao(idExpedicao);
+    carregarDadosExpedicao();
+}
+
+// Atualizar o estado da encomenda.Expedida de 'Não' para 'Parcial' ou 'Total'
+bool Expedicao::atualizarStatusEncomenda()
+{
+    int idExpedicao = idExpedicaoSelecionado.toInt();
+    // ligação à base de dados
+    QSqlDatabase bd = QSqlDatabase::database();
+    bd.transaction(); // Inicia uma transação
+
+    // obter as encomendas presentes na ficha atual de expedição
+    QSqlQuery obterEncomendas;
+    obterEncomendas.prepare("SELECT DISTINCT ID_Encomenda FROM expedicaoDetalhe "
+                            "WHERE ID_Expedicao = :ID_Expedicao");
+    obterEncomendas.bindValue(":ID_Expedicao", idExpedicao);
+
+    if (!obterEncomendas.exec()) {
+        qDebug() << "Erro ao obter encomendas da expedicão: " << obterEncomendas.lastError().text();
+        return false;
+    }
+
+    int totalProdutos = 0, totalExpedidos = 0;
+    while (obterEncomendas.next()) {
+        int idEncomenda = obterEncomendas.value("ID_Encomenda").toInt();
+        // contar o total de produtos de cada encomenda
+        QSqlQuery totalProdutosEncomenda;
+        totalProdutosEncomenda.prepare("SELECT COUNT(*) as totalProdutos  FROM encomendaDetalhe "
+                                       "WHERE ID_Encomenda = :ID_Encomenda");
+        totalProdutosEncomenda.bindValue(":ID_Encomenda", idEncomenda);
+
+        if(totalProdutosEncomenda.exec() && totalProdutosEncomenda.next()){
+            totalProdutos = totalProdutosEncomenda.value("totalProdutos").toInt();
+        }
+
+        else{
+            qDebug() << "Falha ao contar o total de produtos da encomenda:" << totalProdutosEncomenda.lastError().text();
+            return false;
+        }
+
+        // contar o total de produtos expedidos da encomenda
+        // considera-se a encomenda como expedida quando o expedicao.Expedida = 'Sim'
+        QSqlQuery totalProdutosExpedidos;
+        totalProdutosExpedidos.prepare("SELECT COUNT(*) as totalProdutosExpedidos FROM expedicaoDetalhe "
+                                       "INNER JOIN expedicao ON expedicaoDetalhe.ID_Expedicao = expedicao.ID_Expedicao "
+                                       "WHERE expedicaoDetalhe.ID_Encomenda = :ID_Encomenda AND expedicao.Expedida = 'Sim'");
+        totalProdutosExpedidos.bindValue(":ID_Encomenda", idEncomenda);
+        if(totalProdutosExpedidos.exec() && totalProdutosExpedidos.next())
+        {
+            totalExpedidos = totalProdutosExpedidos.value("totalProdutosExpedidos").toInt();
+        }
+        else{
+            qDebug() << "Falha ao contar o total de produtos expedidos da encomenda:" << totalProdutosExpedidos.lastError().text();
+            return false;
+        }
+
+        // atualizar o estado da encomenda
+        QString estado = "";
+        if (totalExpedidos == 0) {
+            estado = "Não";
+        } else if (totalExpedidos < totalProdutos) {
+            estado = "Parcial";
+        } else {
+            estado = "Total";
+        }
+
+        QSqlQuery atualizarEstado;
+        atualizarEstado.prepare("UPDATE encomenda SET Expedida = :Expedida "
+                                "WHERE ID_Encomenda = :ID_Encomenda");
+        atualizarEstado.bindValue(":Expedida", estado);
+        atualizarEstado.bindValue(":ID_Encomenda", idEncomenda);
+
+        if (!atualizarEstado.exec()) {
+            qDebug() << "Erro ao atualizar o estado da encomenda: " << atualizarEstado.lastError().text();
+            bd.rollback();
+            return false;
+        }
+    }
+
+    if (!bd.commit()) {
+        qDebug() << "Erro ao atualizar o estado da encomenda.";
+        return false;
+    }
+
+    qDebug() << "Estado da encomenda atualizado com sucesso";
+    return true;
+}
+
+// Exibir um relatório no ecrã com a informação da expedição
+void Expedicao::relatorioExpedicao()
+{
+    int idExpedicao = idExpedicaoSelecionado.toInt();
+    QString reportHtml = "";
+
+    QSqlQuery obterInfoExpedicao;
+    obterInfoExpedicao.prepare("SELECT expedicao.Num_Expedicao, cliente.Cliente "
+                               "FROM expedicao "
+                               "INNER JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente "
+                               "WHERE expedicao.ID_Expedicao = :ID_Expedicao;");
+    obterInfoExpedicao.bindValue(":ID_Expedicao", idExpedicao);
+
+    if(obterInfoExpedicao.exec() && obterInfoExpedicao.first())
+    {
+        QString numExpedicao = obterInfoExpedicao.value("Num_Expedicao").toString();
+        QString nomeCliente = obterInfoExpedicao.value("Cliente").toString();
+
+        reportHtml = "<h2>Expedição validada</h2>"
+                     + QString( "<p><b>Número da Expedição:</b> %1</p>").arg(numExpedicao)
+                     + QString( "<p><b>Cliente:</b> %1</p>").arg(nomeCliente) +
+                     "<p><b>Stock:</b></p>";
+
+        QSqlQuery obterDetalhesExpedicao;
+        obterDetalhesExpedicao.prepare("SELECT expedicaodetalhe.Qtd_produto, produto.Codigo_Produto "
+                                       "FROM expedicaodetalhe "
+                                       "INNER JOIN produto ON expedicaodetalhe.ID_Produto = produto.ID_Produto "
+                                       "WHERE expedicaodetalhe.ID_Expedicao = :ID_Expedicao;");
+        obterDetalhesExpedicao.bindValue(":ID_Expedicao", idExpedicao);
+
+        if (obterDetalhesExpedicao.exec()) {
+            while(obterDetalhesExpedicao.next())
+            {
+                QString quantProduto = obterDetalhesExpedicao.value("Qtd_produto").toString();
+                QString codProduto = obterDetalhesExpedicao.value("Codigo_Produto").toString();
+                reportHtml += QString("<p>  - Saída de %1 unidades do Produto %2</p>").arg(quantProduto, codProduto);
+            }
+        } else {
+            qDebug() << "Erro ao obter os detalhes da expedição: " << obterDetalhesExpedicao.lastError().text();
+        }
+    }
+    else
+    {
+        qDebug() << "Erro ao obter a informação da Expedição!:" << obterInfoExpedicao.lastError().text();
+    }
+
+    reportHtml += QString("<p><b>Data:</b> %1</p>").arg(QDate::currentDate().toString("dd-MM-yyyy")) ;
+
+    ReportDialog dialog(reportHtml);
+    dialog.exec();
 }
 
 void Expedicao::on_tableWidget_expedicoes_cellDoubleClicked()
@@ -687,7 +929,7 @@ void Expedicao::carregarDadosExpedicao()
     QSqlQuery obterDados;
     obterDados.prepare("SELECT expedicao.ID_Expedicao, expedicao.Num_Expedicao, cliente.Cliente, "
                        "expedicao.Qtd_expedicao, expedicao.Expedida, expedicao.Data_expedicao "
-                       "FROM expedicao LEFT JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente;");
+                       "FROM expedicao INNER JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente;");
 
     //verificar o acesso à BD
     if(obterDados.exec())
@@ -711,7 +953,7 @@ void Expedicao::carregarDadosExpedicao()
 
         //colocar os títulos das colunas igual à ordem da query 'obterDados'
         QStringList titulos;
-        titulos = {"Registo", "Nr. Expedição", "Cliente", "Quantidade (un)", "Expedida", "Data Expedição"};
+        titulos = {"Registo", "Nr. Expedição", "Cliente", "Quantidade (un)", "Expedida", "Data Expedição"};  // CORRIGIR formatar data
         ui->tableWidget_expedicoes->setHorizontalHeaderLabels(titulos);
         // formatar título
         ui->tableWidget_expedicoes->horizontalHeader()->setStyleSheet("QHeaderView::section {color: white; background-color: #004b23; font: bold 10px}");
@@ -736,7 +978,8 @@ void Expedicao::carregarDadosExpedicao()
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar a informação das Expedições na tabela.");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação das Expedições na tabela Lista de Expedições."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar a informação das Expedições na tabela:" << obterDados.lastError().text();
         qDebug() << "Consulta SQL Expedições:" << obterDados.lastQuery();
     }
@@ -760,7 +1003,7 @@ void Expedicao::on_btnPesquisar_clicked()
     // construir a consulta SQL
     QString pesquisa = "SELECT expedicao.ID_Expedicao, expedicao.Num_Expedicao, cliente.Cliente, "
                        "expedicao.Qtd_expedicao, expedicao.Expedida, expedicao.Data_expedicao "
-                       "FROM expedicao LEFT JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente "
+                       "FROM expedicao INNER JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente "
                        "WHERE 1 = 1 ";
 
     if (!numExpedicao.isEmpty()) {
@@ -809,7 +1052,6 @@ void Expedicao::on_btnLimparPesquisa_clicked()
     ui->txtCliente->clear();
     ui->cmbExpedida->setCurrentIndex(0);
     carregarDadosExpedicao();
-
 }
 
 void Expedicao::on_dateEdit_userDateChanged()

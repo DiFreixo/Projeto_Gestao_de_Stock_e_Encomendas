@@ -383,7 +383,7 @@ public:
 
         retranslateUi(Expedicao);
 
-        stackedWidget->setCurrentIndex(0);
+        stackedWidget->setCurrentIndex(1);
 
 
         QMetaObject::connectSlotsByName(Expedicao);

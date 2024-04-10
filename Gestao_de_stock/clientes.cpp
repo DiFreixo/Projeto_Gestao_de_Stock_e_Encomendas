@@ -12,7 +12,7 @@ Clientes::Clientes(QWidget *parent)
     , ui(new Ui::Clientes)
 {
     ui->setupUi(this);
-    // inicializa na página 0
+    // inicializa na página 0 'Lista de Clientes'
     ui->stackedWidget->setCurrentIndex(0);
 
     carregarDadosClientes();
@@ -33,7 +33,6 @@ Clientes::Clientes(QWidget *parent)
     QIntValidator *telefone = new QIntValidator(this);
     ui->txtTelefone->setValidator(telefone);
     //ui->txtTelefone->setInputMask("999 999 999;_");
-
 }
 
 Clientes::~Clientes()
@@ -92,7 +91,7 @@ void Clientes::on_btnGuardar_clicked()
 
     queryNifExistente.exec();
     if (queryNifExistente.next() && queryNifExistente.value(0).toInt() > 0) {
-        QMessageBox::warning(this, "NIF existente", "Já existe um cliente com este NIF.");
+        QMessageBox::warning(this, "NIF duplicado", "Já existe um cliente com este NIF.");
         return;
     }
 
@@ -166,7 +165,7 @@ void Clientes::carregarDadosClientes()
     limparTableWidget(ui->tableWidget_clientes);
 
     QSqlQuery obterDados;
-    obterDados.prepare("SELECT ID_Cliente, NIF, Cliente, Telefone, Email, Data_criacao FROM cliente;");
+    obterDados.prepare("SELECT ID_Cliente, NIF, Cliente, Telefone, Email, Data_criacao FROM cliente;"); // Corrigir  formato data
 
     //verificar o acesso à BD
     if(obterDados.exec())
@@ -215,7 +214,8 @@ void Clientes::carregarDadosClientes()
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar a informação dos clientes na tabela");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação dos clientes na tabela Lista de Clientes."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar a informação dos clientes:" << obterDados.lastError().text();
         qDebug() << "Consulta SQL Lista de clientes:" << obterDados.lastQuery();
     }
@@ -244,7 +244,7 @@ void Clientes::on_tableWidget_clientes_cellDoubleClicked()
     idClienteSelecionado  = ui->tableWidget_clientes->item(linhaAtual, 0)->text();
     idCliente = idClienteSelecionado.toInt();
 
-    ui->stackedWidget->setCurrentIndex(1);
+    ui->stackedWidget->setCurrentIndex(1); // página de registo de expedições
 
     QSqlQuery obterDados;
     obterDados.prepare("SELECT * FROM cliente WHERE ID_Cliente = :idCliente;");
@@ -268,7 +268,8 @@ void Clientes::on_tableWidget_clientes_cellDoubleClicked()
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar dados do cliente!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação dos clientes."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar dados do cliente:" << obterDados.lastError().text();
     }
 }
@@ -390,7 +391,6 @@ void Clientes::on_btnEliminar_clicked()
         }
     }
 }
-
 
 void Clientes::on_btnPesquisarCliente_clicked()
 {

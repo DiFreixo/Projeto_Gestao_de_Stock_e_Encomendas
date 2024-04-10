@@ -88,7 +88,6 @@ void ListaProdutos::on_btnInicio_produtos_clicked()
 
 void ListaProdutos::on_btnNovo_produto_clicked()
 {
-    limparCampos();
     ui->stackedWidget->setCurrentIndex(1);
     limparCampos();
     habilitarCampos();
@@ -102,6 +101,7 @@ void ListaProdutos::on_btnNovo_produto_clicked()
 
 void ListaProdutos::on_btnVoltar_produtos_clicked()
 {
+    limparCampos();
     ui->stackedWidget->setCurrentIndex(0);
 }
 
@@ -245,7 +245,7 @@ void ListaProdutos::on_btnGuardar_clicked()
 
     ui->btnVoltar_produtos->setEnabled(true);
     ui->btnEliminar->setEnabled(false);
-    ui->btnGuardar->setEnabled(true);
+    ui->btnGuardar->setEnabled(false);
     ui->btnCancelar->setEnabled(true);
     ui->btnModificar->setEnabled(false);
     //após registar os produtos é necessário carregar os dados novamente
@@ -311,7 +311,7 @@ void ListaProdutos::carregarDadosProdutos()
     QSqlQuery obterDados;
     obterDados.prepare("SELECT produto.ID_Produto, produto.Codigo_Produto, produto.Produto, produtodetalhe.Gama, produtodetalhe.Cor, "
                        "produtodetalhe.Volume, produtodetalhe.Peso, produtodetalhe.Altura, produtodetalhe.Diametro, produto.Preco_venda, "
-                       "produto.Data_criacao FROM produto LEFT JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto;");
+                       "produto.Data_criacao FROM produto INNER JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto;");
 
     //verificar o acesso à BD
     if(obterDados.exec())
@@ -324,7 +324,7 @@ void ListaProdutos::carregarDadosProdutos()
         while(obterDados.next())
         {
             //inserir uma linha na tabela do formulário
-            ui->tableWidget_ListaProdutos->insertRow(linha);
+            ui->tableWidget_ListaProdutos->insertRow(linha);  // CORRIGIR formatar data
             for(int coluna = 0; coluna < 11; coluna++)
             {
                 QTableWidgetItem* novoItem = new QTableWidgetItem(obterDados.value(coluna).toString());
@@ -374,7 +374,8 @@ void ListaProdutos::carregarDadosProdutos()
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar a informação dos produtos na tabela.");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação dos produtos na tabela Lista de Produtos."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar a informação dos produtos na tabela:" << obterDados.lastError().text();
         qDebug() << "Consulta SQL Lista de produtos:" << obterDados.lastQuery();
     }
@@ -410,10 +411,9 @@ void ListaProdutos::on_tableWidget_ListaProdutos_cellDoubleClicked()
 
     QSqlQuery obterDados;
     obterDados.prepare("SELECT produto.*, produtodetalhe.Gama, produtodetalhe.Cor, produtodetalhe.Volume, produtodetalhe.Peso, produtodetalhe.Altura, "
-                       "produtodetalhe.Diametro, stock.Qtd_total, stock.Qtd_reservada, stock.Qtd_disponivel, expedicaodetalhe.Qtd_produto "
-                       "FROM produto LEFT JOIN produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
-                       "LEFT JOIN stock ON produto.ID_Produto = stock.ID_Produto "
-                       "LEFT JOIN expedicaodetalhe ON produto.ID_Produto = expedicaodetalhe.ID_Produto "
+                       "produtodetalhe.Diametro, stock.Qtd_total, stock.Qtd_reservada, stock.Qtd_disponivel "
+                       "FROM produto INNER JOIN produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
+                       "INNER JOIN stock ON produto.ID_Produto = stock.ID_Produto "
                        "WHERE produto.ID_Produto = :idProduto;");     
     obterDados.bindValue(":idProduto", idProduto);
 
@@ -454,12 +454,6 @@ void ListaProdutos::on_tableWidget_ListaProdutos_cellDoubleClicked()
         precoVendaSemPonto.replace('.', ',');
         ui->txtPrecoVenda->setText(precoVendaSemPonto);
 
-        //  ################ CORRIGIR ###########################
-        // Considerar as encomendas expedidas -> é necessário verificar todas as expedições desse produto
-        ui->txtTotalVendido->setText(obterDados.value("Qtd_produto").toString());;
-        int totalVendas = obterDados.value("Qtd_produto").toInt() * precoVendaSemPonto.toInt();
-        ui->txtTotalVendas->setText(QString::number(totalVendas));
-
         // formatar data
         QString dataStr = obterDados.value("Data_criacao").toString();
         QDateTime dataHora = QDateTime::fromString(dataStr, Qt::ISODate);
@@ -480,11 +474,31 @@ void ListaProdutos::on_tableWidget_ListaProdutos_cellDoubleClicked()
         } else {
             qDebug() << "Caminho da imagem está vazio.";
             ui->lblImagem->setVisible(false);
-        }  
+        }
+
+        // contabilizar o total de vendas do produto
+        // Considerar as produtos expedidos, expedicao.Expedida = 'Sim'
+        QSqlQuery soma;
+        soma.prepare("SELECT sum(expedicaoDetalhe.Qtd_produto) as total "
+                           "FROM expedicaoDetalhe "
+                           "INNER JOIN expedicao ON expedicaoDetalhe.ID_Expedicao = expedicao.ID_Expedicao  "
+                           "WHERE expedicaoDetalhe.ID_Produto = :idProduto AND "
+                           "expedicao.Expedida = 'Sim';");
+        soma.bindValue(":idProduto", idProduto);
+
+        if(soma.exec() && soma.next()){
+            ui->txtTotalVendido->setText(soma.value("total").toString());;
+            int totalVendas = soma.value("total").toInt() * precoVendaSemPonto.toInt();
+            ui->txtTotalVendas->setText(QString::number(totalVendas));
+        }
+        else{
+            qDebug() << "Falha ao contablizar a total de produdos vendidos:" << soma.lastError().text();
+        }
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar dados do produto!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação do porduto."
+                                                             "\nPor favor, contacte o suporte!");
     }
 }
 
@@ -592,9 +606,8 @@ void ListaProdutos::atualizarProduto()
     ajustarVisibilidadeBotoes(true);
 }
 
- //  ################ CORRIGIR ###########################
 // Eliminar registo do produto da base de dados
-// NOTA1: só é possível eliminar registos de produtos com stock vazio e se não tiver nehuma encomenda/expedição associado a ele - Falta alterar
+//Nota: só é possível eliminar registos de produtos com stock vazio e se não tiver nehuma encomenda associado a ele
 void ListaProdutos::on_btnEliminar_clicked()
 {
     if (ui->txtRegisto->text().isEmpty()){
@@ -606,67 +619,87 @@ void ListaProdutos::on_btnEliminar_clicked()
         return;
     }
 
+    // verificar se o produto está associado a alguma encomenda
+    // fazer a contagem do produto
+    int totalProduto = 0;
+    QSqlQuery contarProduto;
+    contarProduto.prepare("SELECT COUNT(*) as totalProduto  FROM encomendaDetalhe "
+                                   "WHERE ID_Produto = :ID_Produto");
+    contarProduto.bindValue(":ID_Produto", idProdutoSelecionado);
+
+    if(contarProduto.exec() && contarProduto.next()){
+        totalProduto = contarProduto.value("totalProduto").toInt();
+    }
     else{
-        QMessageBox::StandardButton confirmar;
-        confirmar = QMessageBox::question(this, "Confirmar",
-                                          "Pretende eliminar o produto " + ui->txtNome->text() + "?",
-                                          QMessageBox::Yes|QMessageBox::No);
+        qDebug() << "Falha ao fazer a contagem do produto:" << contarProduto.lastError().text();
+        return;
+    }
 
-        if (confirmar == QMessageBox::Yes)
-        {
-            int idProduto = idProdutoSelecionado.toInt();
+    if (totalProduto > 0){
+        QMessageBox::warning(this, "Produto em Encomenda", "Não é possível eliminar produtos associados a encomendas.");
+        return;
+    }
 
-            QSqlDatabase bd = QSqlDatabase::database();
-            bd.transaction();
+    // se o produto não tiver nenhuma restrição aparece a mensagem
+    QMessageBox::StandardButton confirmar;
+    confirmar = QMessageBox::question(this, "Confirmar",
+                                      "Pretende eliminar o produto " + ui->txtNome->text() + "?",
+                                      QMessageBox::Yes|QMessageBox::No);
 
-            QSqlQuery eliminar;
+    if (confirmar == QMessageBox::Yes)
+    {
+        int idProduto = idProdutoSelecionado.toInt();
 
-            // primeiro , exclui registos da tabela 'stock', que contem a chave secundária
-            eliminar.prepare("DELETE FROM stock WHERE ID_Produto = :idSelecionado");
-            eliminar.bindValue(":idSelecionado", idProduto);
-            if (!eliminar.exec()) {
-                bd.rollback(); // Reverte a transação se ocorrer um erro
-                qDebug() << "Erro ao excluir o registo da tabela stock:" << eliminar.lastError().text();
-                return;
-            }
+        QSqlDatabase bd = QSqlDatabase::database();
+        bd.transaction();
 
-            // segundo, exclui registos da tabela 'produtoDetalhe', que contem a chave secundária
-            eliminar.prepare("DELETE FROM produtodetalhe WHERE ID_Produto = :idSelecionado");
-            eliminar.bindValue(":idSelecionado", idProduto);
-            if (!eliminar.exec()) {
-                bd.rollback(); // Reverte a transação se ocorrer um erro
-                qDebug() << "Erro ao excluir o registo da tabela produtoDetalhe:" << eliminar.lastError().text();
-                return;
-            }
+        QSqlQuery eliminar;
 
-            // Depois, exclui registos da tabela 'produto', que contem a chave primária
-            eliminar.prepare("DELETE FROM produto WHERE ID_Produto = :idSelecionado");
-            eliminar.bindValue(":idSelecionado", idProduto);
-            if (!eliminar.exec()) {
-                bd.rollback(); // Reverte a transação se ocorrer um erro
-                qDebug() << "Erro ao excluir  o registo da tabela produto:" << eliminar.lastError().text();
-                return;
-            }
-
-            if (!bd.commit()) {
-                QMessageBox::critical(this, "Erro na base de dados", "Falha ao eliminar o registo do produto da base de dados."
-                                                                     "\nPor favor, contacte o suporte!");
-                return;
-            }
-            QMessageBox::information(this, "Aviso", "Registo eliminado com sucesso!");
-
-            ui->btnVoltar_produtos->setEnabled(true);
-            ui->btnEliminar->setEnabled(false);
-            ui->btnGuardar->setEnabled(false);
-            ui->btnCancelar->setEnabled(false);
-            ui->btnModificar->setEnabled(false);
-
-            ajustarVisibilidadeBotoes(false);
-            limparCampos();
-            desabilitarCampos();
-            carregarDadosProdutos();
-            emit listaProdutosAtualizada();
+        // primeiro , exclui registos da tabela 'stock', que contem a chave secundária
+        eliminar.prepare("DELETE FROM stock WHERE ID_Produto = :idSelecionado");
+        eliminar.bindValue(":idSelecionado", idProduto);
+        if (!eliminar.exec()) {
+            bd.rollback(); // Reverte a transação se ocorrer um erro
+            qDebug() << "Erro ao excluir o registo da tabela stock:" << eliminar.lastError().text();
+            return;
         }
+
+        // segundo, exclui registos da tabela 'produtoDetalhe', que contem a chave secundária
+        eliminar.prepare("DELETE FROM produtodetalhe WHERE ID_Produto = :idSelecionado");
+        eliminar.bindValue(":idSelecionado", idProduto);
+        if (!eliminar.exec()) {
+            bd.rollback(); // Reverte a transação se ocorrer um erro
+            qDebug() << "Erro ao excluir o registo da tabela produtoDetalhe:" << eliminar.lastError().text();
+            return;
+        }
+
+        // Depois, exclui registos da tabela 'produto', que contem a chave primária
+        eliminar.prepare("DELETE FROM produto WHERE ID_Produto = :idSelecionado");
+        eliminar.bindValue(":idSelecionado", idProduto);
+        if (!eliminar.exec()) {
+            bd.rollback(); // Reverte a transação se ocorrer um erro
+            qDebug() << "Erro ao excluir  o registo da tabela produto:" << eliminar.lastError().text();
+            return;
+        }
+
+        if (!bd.commit()) {
+            QMessageBox::critical(this, "Erro na base de dados", "Falha ao eliminar o registo do produto da base de dados."
+                                                                 "\nPor favor, contacte o suporte!");
+            return;
+        }
+        QMessageBox::information(this, "Aviso", "Registo eliminado com sucesso!");
+
+        ui->btnVoltar_produtos->setEnabled(true);
+        ui->btnEliminar->setEnabled(false);
+        ui->btnGuardar->setEnabled(false);
+        ui->btnCancelar->setEnabled(false);
+        ui->btnModificar->setEnabled(false);
+
+        ajustarVisibilidadeBotoes(false);
+        limparCampos();
+        desabilitarCampos();
+        carregarDadosProdutos();
+        emit listaProdutosAtualizada();
     }
 }
 
@@ -864,7 +897,7 @@ void ListaProdutos::on_btnPesquisarProduto_clicked()
     // construir a consulta SQL
     QString pesquisa = "SELECT produto.ID_Produto, produto.Codigo_Produto, produto.Produto, produtodetalhe.Gama, produtodetalhe.Cor, "
                        "produtodetalhe.Volume, produtodetalhe.Peso, produtodetalhe.Altura, produtodetalhe.Diametro, produto.Preco_venda, "
-                       "produto.Data_criacao FROM produto LEFT JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
+                       "produto.Data_criacao FROM produto INNER JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
                        "WHERE Peso BETWEEN :pesoMin AND :pesoMax AND "
                        "Volume BETWEEN :volumeMin AND :volumeMax AND "
                        "Altura BETWEEN :alturaMin AND :alturaMax AND "
@@ -1028,17 +1061,6 @@ void ListaProdutos::on_btnLimparPesquisa_clicked()
     ui->cmbAltura_max->setCurrentIndex(0);
     ui->cmbDiametro_min->setCurrentIndex(0);
     ui->cmbDiametro_max->setCurrentIndex(0);
-    /*
-    ui->buttonGroup_pesquisarCor->setExclusive(false); // Permite desmarcar todos os botões
-    ui->buttonGroup_pesquisarCor->checkedButton()->setChecked(false);
-    //ui->buttonGroup_pesquisarCor->setExclusive(true); // Restaura a exclusividade
-    ui->rbCanela->setStyleSheet("QRadioButton::indicator {background-color:#82581D;}");
-    ui->rbFolhaMorta->setStyleSheet("QRadioButton::indicator {background-color:#B8AA4D;}");
-    ui->rbAzul->setStyleSheet("QRadioButton::indicator {background-color:#2125E0;}");
-    ui->rbNegro->setStyleSheet("QRadioButton::indicator {background-color:#332A33;}");
-    ui->rbBranco->setStyleSheet("QRadioButton::indicator {background-color:#FFFFFF;}");
-    ui->rbVerde->setStyleSheet("QRadioButton::indicator {background-color:#5FB916;}");
-    ui->rbAmbar->setStyleSheet("QRadioButton::indicator {background-color:#912E06;}");*/
     carregarDadosProdutos();
 }
 

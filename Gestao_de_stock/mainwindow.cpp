@@ -25,19 +25,20 @@ MainWindow::MainWindow(QWidget *parent)
     */
 
     QSqlDatabase bd = QSqlDatabase::addDatabase("QMYSQL");
-    // phpmyadmin
+     /*// phpmyadmin
     bd.setHostName("localhost");
     bd.setPort(3306);
     bd.setUserName("root");
     bd.setPassword("");
     bd.setDatabaseName("bdglowglass");
-    /* // servidor
+    */
+    // servidor
     bd.setHostName("192.168.1.77");
     bd.setPort(3306);
     bd.setUserName("programador");
     bd.setPassword("Server2023!");
     bd.setDatabaseName("bdglowglass");
-    */
+
     if(bd.open())
     {
         ui->statusbar->showMessage(tr("Ligação à base de dados efetuada com sucesso!"), 5000);

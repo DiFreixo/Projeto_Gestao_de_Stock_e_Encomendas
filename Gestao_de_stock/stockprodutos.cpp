@@ -41,8 +41,8 @@ void StockProdutos::carregarDadosStock()
 
     obterDadosStock.prepare("SELECT produto.Codigo_Produto, produto.Produto, produtodetalhe.Gama, produto.Stock_minimo, "
                         "stock.Qtd_total, stock.Qtd_reservada, stock.Qtd_disponivel FROM produto "
-                        "LEFT JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
-                        "LEFT JOIN stock ON produto.ID_Produto = stock.ID_Produto;");
+                        "INNER JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
+                        "INNER JOIN stock ON produto.ID_Produto = stock.ID_Produto;");
 
     //verificar o acesso à BD
     if(obterDadosStock.exec())
@@ -94,7 +94,8 @@ void StockProdutos::carregarDadosStock()
     }
     else
     {
-        QMessageBox::information(this, "Atenção", "Erro ao carregar a informação dos produtos na tabela Stock");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação dos produtos na tabela Stock."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar a informação dos produtos na tabela Stock:" << obterDadosStock.lastError().text();
         qDebug() << "Consulta SQL Stock:" << obterDadosStock.lastQuery();
     }
@@ -118,8 +119,8 @@ void StockProdutos::on_btnPesquisarProduto_stock_clicked()
     // construir a consulta SQL
     QString pesquisa = "SELECT produto.Codigo_Produto, produto.Produto, produtodetalhe.Gama, produto.Stock_minimo, "
                             "stock.Qtd_total, stock.Qtd_reservada, stock.Qtd_disponivel FROM produto "
-                            "LEFT JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
-                            "LEFT JOIN stock ON produto.ID_Produto = stock.ID_Produto "
+                            "INNER JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
+                            "INNER JOIN stock ON produto.ID_Produto = stock.ID_Produto "
                             "WHERE 1=1 ";
 
     if (!gama.isEmpty()) {
@@ -189,11 +190,13 @@ void StockProdutos::alterarCoresLinhas() {
     }
 }
 
+// fazer uma entrada direta de produto em stock
 void StockProdutos::on_btnEntradaStock_clicked()
 {
     QString codigo = ui->txtCodigoProduto->text();
     int qtdEntrada = ui->txtQuantidade->text().toInt();
 
+    // verificar se os campos estão corretamente preenchidos
     if (!verificarCampos()) {
         qDebug() << "Falha na verificação dos campos.";
         return;
@@ -201,58 +204,38 @@ void StockProdutos::on_btnEntradaStock_clicked()
 
     // ligação à base de dados
     QSqlDatabase bd = QSqlDatabase::database();
+    bd.transaction(); // Iniciar a transação
 
     // Verificar se o codigo do produto existe na base de dados e obter o Id_Produto correspondente
-    QSqlQuery queryVerifica(bd);
-    queryVerifica.prepare("SELECT ID_Produto FROM produto WHERE Codigo_Produto = :codigo");
-    queryVerifica.bindValue(":codigo", codigo);
-    queryVerifica.exec();
+    QSqlQuery verificaProduto(bd);
+    verificaProduto.prepare("SELECT ID_Produto FROM produto WHERE Codigo_Produto = :codigo");
+    verificaProduto.bindValue(":codigo", codigo);
 
-    if(queryVerifica.next()) {
-        int IdProduto = queryVerifica.value(0).toInt();
+    if(verificaProduto.exec() && verificaProduto.next())
+    {
+        int IdProduto = verificaProduto.value(0).toInt();
 
-        // Iniciar transação
-        bd.transaction();
+        // atualizar a quantidade de produto em Stock (total e disponível)
+        QSqlQuery atualizaStock;
+        // Atualizar na tabela 'stock'
+        atualizaStock.prepare("UPDATE stock SET Qtd_total = Qtd_total + :qtdEntrada, "
+                              "Qtd_disponivel = (Qtd_total + :qtdEntrada) - Qtd_reservada "
+                              "WHERE ID_Produto = :IdProduto");
+        atualizaStock.bindValue(":qtdEntrada", qtdEntrada);
+        atualizaStock.bindValue(":IdProduto", IdProduto);
 
-        // Obter os dados atuais de stock para o produto
-        QSqlQuery queryStock(bd);
-        queryStock.prepare("SELECT Qtd_total, Qtd_reservada FROM stock WHERE ID_Produto = :IdProduto");
-        queryStock.bindValue(":IdProduto", IdProduto);
-        queryStock.exec();
-
-        if(queryStock.next()) {
-            int qtdTotal = queryStock.value("Qtd_total").toInt();
-            int qtdReservada = queryStock.value("Qtd_reservada").toInt();
-
-            qtdTotal += qtdEntrada;
-            int qtdDisponivel = qtdTotal - qtdReservada;
-
-            QSqlQuery queryAtualiza;
-            // Atualizar na tabela 'stock'
-            queryAtualiza.prepare("UPDATE stock SET Qtd_total = :qtdTotal, "
-                                  "Qtd_reservada = :qtdReservada, "
-                                  "Qtd_disponivel = :qtdDisponivel "
-                                  "WHERE ID_Produto = :IdProduto");
-            queryAtualiza.bindValue(":qtdTotal", qtdTotal);
-            queryAtualiza.bindValue(":qtdReservada", qtdReservada);
-            queryAtualiza.bindValue(":qtdDisponivel", qtdDisponivel);
-            queryAtualiza.bindValue(":IdProduto", IdProduto);
-
-            if (!queryAtualiza.exec()) {
-                qDebug() << "Falha ao atualizar dados na tabela Stock da base de dados:" << queryAtualiza.lastError().text();
-                bd.rollback();
-                return;
-            }
-
-            if (!bd.commit()) {
-                qDebug() << "Falha ao guardar as informações na tabela Stock da base de dados.";
-            } else {
-                qDebug() << "Informação inserida com sucesso na tabela Stock da base de dados.";
-            }
-        } else {
-            qDebug() << "Produto com código " << codigo << " não encontrado na tabela stock.";
+        if (!atualizaStock.exec()) {
+            qDebug() << "Falha ao atualizar dados na tabela Stock da base de dados:" << atualizaStock.lastError().text();
             bd.rollback();
+            return;
         }
+
+        if (!bd.commit()) {
+            qDebug() << "Falha ao guardar as informações na tabela Stock da base de dados.";
+        } else {
+            qDebug() << "Informação inserida com sucesso na tabela Stock da base de dados.";
+        }
+
     } else {
         QMessageBox::warning(this, "Código", "Produto com código " + codigo + " não encontrado.");
         ui->txtCodigoProduto->setFocus();
@@ -262,11 +245,13 @@ void StockProdutos::on_btnEntradaStock_clicked()
     carregarDadosStock();
 }
 
+// fazer uma saida direta de produto em stock
 void StockProdutos::on_btnSaidaStock_clicked()
 {
     QString codigo = ui->txtCodigoProduto->text();
     int qtdSaida = ui->txtQuantidade->text().toInt();
 
+    // verificar se os campos estão corretamente preenchidos
     if (!verificarCampos()) {
         qDebug() << "Falha na verificação dos campos.";
         return;
@@ -274,28 +259,24 @@ void StockProdutos::on_btnSaidaStock_clicked()
 
     // ligação à base de dados
     QSqlDatabase bd = QSqlDatabase::database();
+    bd.transaction(); // Iniciar a transação
 
     // Verificar se o codigo do produto existe na base de dados e obter o Id_Produto correspondente
-    QSqlQuery queryVerifica(bd);
-    queryVerifica.prepare("SELECT ID_Produto FROM produto WHERE Codigo_Produto = :codigo");
-    queryVerifica.bindValue(":codigo", codigo);
-    queryVerifica.exec();
+    QSqlQuery verificaProduto(bd);
+    verificaProduto.prepare("SELECT ID_Produto FROM produto WHERE Codigo_Produto = :codigo");
+    verificaProduto.bindValue(":codigo", codigo);
 
-    if(queryVerifica.next()) {
-        int IdProduto = queryVerifica.value(0).toInt();
-
-        // Iniciar transação
-        bd.transaction();
+    if(verificaProduto.exec() && verificaProduto.next()) {
+        int IdProduto = verificaProduto.value(0).toInt();
 
         // Obter os dados atuais de stock para o produto
-        QSqlQuery queryStock(bd);
-        queryStock.prepare("SELECT Qtd_total, Qtd_reservada FROM stock WHERE ID_Produto = :IdProduto");
-        queryStock.bindValue(":IdProduto", IdProduto);
-        queryStock.exec();
+        QSqlQuery stockAtual(bd);
+        stockAtual.prepare("SELECT Qtd_total, Qtd_reservada FROM stock WHERE ID_Produto = :IdProduto");
+        stockAtual.bindValue(":IdProduto", IdProduto);
 
-        if(queryStock.next()) {
-            int qtdTotal = queryStock.value("Qtd_total").toInt();
-            int qtdReservada = queryStock.value("Qtd_reservada").toInt();
+        if(stockAtual.exec() && stockAtual.next()) {
+            int qtdTotal = stockAtual.value("Qtd_total").toInt();
+            int qtdReservada = stockAtual.value("Qtd_reservada").toInt();
 
             int qtdDisponivel = qtdTotal - qtdReservada;
 
@@ -308,19 +289,17 @@ void StockProdutos::on_btnSaidaStock_clicked()
             qtdTotal -= qtdSaida;
             qtdDisponivel = qtdTotal - qtdReservada;
 
-            QSqlQuery queryAtualiza;
+            QSqlQuery atualizaStock;
             // Atualizar na tabela 'stock'
-            queryAtualiza.prepare("UPDATE stock SET Qtd_total = :qtdTotal, "
-                                  "Qtd_reservada = :qtdReservada, "
+            atualizaStock.prepare("UPDATE stock SET Qtd_total = :qtdTotal, "
                                   "Qtd_disponivel = :qtdDisponivel "
                                   "WHERE ID_Produto = :IdProduto");
-            queryAtualiza.bindValue(":qtdTotal", qtdTotal);
-            queryAtualiza.bindValue(":qtdReservada", qtdReservada);
-            queryAtualiza.bindValue(":qtdDisponivel", qtdDisponivel);
-            queryAtualiza.bindValue(":IdProduto", IdProduto);
+            atualizaStock.bindValue(":qtdTotal", qtdTotal);
+            atualizaStock.bindValue(":qtdDisponivel", qtdDisponivel);
+            atualizaStock.bindValue(":IdProduto", IdProduto);
 
-            if (!queryAtualiza.exec()) {
-                qDebug() << "Falha ao atualizar dados na tabela Stock da base de dados:" << queryAtualiza.lastError().text();
+            if (!atualizaStock.exec()) {
+                qDebug() << "Falha ao atualizar dados na tabela Stock da base de dados:" << atualizaStock.lastError().text();
                 bd.rollback();
                 return;
             }
@@ -334,6 +313,7 @@ void StockProdutos::on_btnSaidaStock_clicked()
             qDebug() << "Produto com código " << codigo << " não encontrado na tabela stock.";
             bd.rollback();
         }
+
     } else {
         QMessageBox::warning(this, "Código", "Produto com código " + codigo + " não encontrado.");
         ui->txtCodigoProduto->setFocus();

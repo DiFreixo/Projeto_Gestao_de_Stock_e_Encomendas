@@ -38,6 +38,8 @@ private:
     void apresentarInfoExpedicao(const int &idExpedicaoGerado);
     void atualizarModeloTreeView();
     void atualizarModeloTableView();
+    bool atualizarStatusEncomenda();
+    void relatorioExpedicao();
 
 
     //atributos da classe

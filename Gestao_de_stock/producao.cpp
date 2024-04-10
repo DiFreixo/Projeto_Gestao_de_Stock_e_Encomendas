@@ -112,7 +112,7 @@ void Producao::preencherComboboxNrEncomenda(bool mostrarTodasEncomendas = false)
     QString queryString = "SELECT encomenda.Num_Encomenda FROM encomenda ";
 
     if (!mostrarTodasEncomendas) {
-        queryString += "LEFT JOIN encomendaDetalhe ON encomenda.ID_Encomenda = encomendaDetalhe.ID_Encomenda "
+        queryString += "INNER JOIN encomendaDetalhe ON encomenda.ID_Encomenda = encomendaDetalhe.ID_Encomenda "
                        "WHERE encomenda.Expedida <> 'Total' AND encomendaDetalhe.Produzido <> 1 GROUP BY encomenda.Num_Encomenda;";
     } else {
         queryString += "WHERE encomenda.Expedida <> 'Total' GROUP BY encomenda.Num_Encomenda;";
@@ -130,7 +130,8 @@ void Producao::preencherComboboxNrEncomenda(bool mostrarTodasEncomendas = false)
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar Nr. da Encomenda!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar Nr. da Encomenda."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar Nr. da Encomenda:" << obterNrEncomenda.lastError().text();
     }
 }
@@ -145,7 +146,7 @@ void Producao::on_cmbNrEncomenda_currentTextChanged(const QString &nrEncomenda)
     }
 
     QSqlQuery obterNomeCliente;
-    obterNomeCliente.prepare("SELECT cliente.Cliente FROM cliente LEFT JOIN encomenda ON cliente.ID_Cliente = encomenda.ID_Cliente "
+    obterNomeCliente.prepare("SELECT cliente.Cliente FROM cliente INNER JOIN encomenda ON cliente.ID_Cliente = encomenda.ID_Cliente "
                              "WHERE encomenda.Num_Encomenda = :Num_Encomenda");
     obterNomeCliente.bindValue(":Num_Encomenda", nrEncomenda);
 
@@ -153,7 +154,8 @@ void Producao::on_cmbNrEncomenda_currentTextChanged(const QString &nrEncomenda)
         QString nomeCliente = obterNomeCliente.value("Cliente").toString();
         ui->txtCliente->setText(nomeCliente);
     } else {
-        QMessageBox::warning(this, "Atenção", "Erro ao obter o nome do cliente!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao obter o nome do cliente."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao obter o nome do cliente:" << obterNomeCliente.lastError().text();
         ui->txtCliente->clear();
     }
@@ -168,9 +170,9 @@ QMap<QString, QList<QString>> Producao::produtosEncomendaSelecionada(const QStri
     QMap<QString, QList<QString>> infoProdutos;
 
     QString queryString = "SELECT produto.Codigo_Produto, produto.Produto, produtodetalhe.Gama, produtodetalhe.Cor, encomendadetalhe.Qtd_produto "
-                          "FROM produto LEFT JOIN produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
-                          "LEFT JOIN encomendadetalhe ON produto.ID_Produto = encomendadetalhe.ID_Produto "
-                          "LEFT JOIN encomenda ON encomendadetalhe.ID_Encomenda = encomenda.ID_Encomenda "
+                          "FROM produto INNER JOIN produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
+                          "INNER JOIN encomendadetalhe ON produto.ID_Produto = encomendadetalhe.ID_Produto "
+                          "INNER JOIN encomenda ON encomendadetalhe.ID_Encomenda = encomenda.ID_Encomenda "
                           "WHERE encomenda.Num_Encomenda = :Num_Encomenda ";
 
     if (!mostrarTodosProdutos) {
@@ -200,6 +202,7 @@ QMap<QString, QList<QString>> Producao::produtosEncomendaSelecionada(const QStri
     return infoProdutos;
 }
 
+// preencher a combobox como o código dos produtos da encomenda selecionada
 void Producao::preencherComboboxCodigoProduto(const QString &nrEncomenda)
 {
     QComboBox* cmbProdutos = new QComboBox(ui->tableWidget_Produtos);
@@ -211,7 +214,7 @@ void Producao::preencherComboboxCodigoProduto(const QString &nrEncomenda)
     for(auto codigo = produtos.begin(); codigo != produtos.end(); codigo++) {
         // serializa a lista de informações do produto numa única string, usando ";" como separador.
         QString codigoInfo = codigo.value().join(";");
-        // adiciona o código do produto como texto visível e a string serializada como dados do item.
+        // adiciona o código do produto como texto visível e a string como dados do item.
         cmbProdutos->addItem(codigo.key(), QVariant(codigoInfo));
     }
 
@@ -374,10 +377,11 @@ void Producao::on_btnGuardar_clicked()
         if (!guardarDados.exec()) {
             qDebug() << "Falha ao inserir na tabela producaoDetalhe:" << guardarDados.lastError().text();
             // Remove a OP inserida anteriormente
-            guardarDados.prepare("DELETE FROM producao WHERE ID_Producao = :ID_Producao");
-            guardarDados.bindValue(":ID_Producao", idProducaoGerado);
-            if (!guardarDados.exec()) {
-                qDebug() << "Erro ao remover o registo da OP:" << guardarDados.lastError().text();
+            QSqlQuery apagarDados;
+            apagarDados.prepare("DELETE FROM producao WHERE ID_Producao = :ID_Producao");
+            apagarDados.bindValue(":ID_Producao", idProducaoGerado);
+            if (!apagarDados.exec()) {
+                qDebug() << "Erro ao remover o registo da OP:" << apagarDados.lastError().text();
             }
             bd.rollback(); // Desfaz a transação incluindo a tentativa de remoção
             return;
@@ -393,21 +397,21 @@ void Producao::on_btnGuardar_clicked()
         if (!updateProduzido.exec()) {
             qDebug() << "Falha ao atualizar a tabela encomendaDetalhe:" << updateProduzido.lastError().text();
 
-            QSqlQuery queryApagar;
+            QSqlQuery apagarDados;
             // Remover da tabela 'producaoDetalhe' o produto inserido anteriormente
-            queryApagar.prepare("DELETE FROM producaoDetalhe WHERE ID_Produto = :ID_Produto AND "
+            apagarDados.prepare("DELETE FROM producaoDetalhe WHERE ID_Produto = :ID_Produto AND "
                                 "ID_Producao = :ID_Producao");
-            queryApagar.bindValue(":ID_Produto", idProduto);
+            apagarDados.bindValue(":ID_Produto", idProduto);
             guardarDados.bindValue(":ID_Producao", idProducaoGerado);
-            if (!queryApagar.exec()) {
-                qDebug() << "Erro ao remover o produto tabela producaoDetalhe:" << queryApagar.lastError().text();
+            if (!apagarDados.exec()) {
+                qDebug() << "Erro ao remover o produto tabela producaoDetalhe:" << apagarDados.lastError().text();
             }
 
             // Remove a OP inserida anteriormente
-            queryApagar.prepare("DELETE FROM producao WHERE ID_Producao = :ID_Producao");
-            queryApagar.bindValue(":ID_Producao", idProducaoGerado);
-            if (!queryApagar.exec()) {
-                qDebug() << "Erro ao remover o registo da OP:" << queryApagar.lastError().text();
+            apagarDados.prepare("DELETE FROM producao WHERE ID_Producao = :ID_Producao");
+            apagarDados.bindValue(":ID_Producao", idProducaoGerado);
+            if (!apagarDados.exec()) {
+                qDebug() << "Erro ao remover o registo da OP:" << apagarDados.lastError().text();
             }
             bd.rollback(); // Desfaz a transação incluindo a tentativa de remoção
             return;
@@ -438,17 +442,18 @@ void Producao::on_btnGuardar_clicked()
     carregarDadosProducao();
 }
 
+// Após guardar o registo da OP, apresentar a página de 'Registos de Ordens de Produção' com toda a informação do registo
 void Producao::apresentarInfoOP(const int &idProducaoGerado)
 {
     QSqlQuery obterDados;
     obterDados.prepare("SELECT producao.ID_Producao, producao.Num_OP, encomenda.Num_Encomenda, cliente.Cliente, producao.Qtd_produzida, "
                        "producao.Status_OP, producao.Data_Producao, producao.Data_ordemProducao, produto.Codigo_Produto, produto.Produto, "
                        "produtodetalhe.Gama, produtodetalhe.Cor, producaodetalhe.Qtd_produto FROM producao "
-                       "LEFT JOIN producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
-                       "LEFT JOIN encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
-                       "LEFT JOIN produto ON producaodetalhe.ID_Produto = produto.ID_Produto "
-                       "LEFT JOIN cliente ON encomenda.ID_Cliente = cliente.ID_Cliente "
-                       "LEFT JOIN produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
+                       "INNER JOIN producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
+                       "INNER JOIN encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
+                       "INNER JOIN produto ON producaodetalhe.ID_Produto = produto.ID_Produto "
+                       "INNER JOIN cliente ON encomenda.ID_Cliente = cliente.ID_Cliente "
+                       "INNER JOIN produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
                        "WHERE producao.ID_Producao = :ID_Producao;");
 
     obterDados.bindValue(":ID_Producao", idProducaoGerado);
@@ -498,7 +503,8 @@ void Producao::apresentarInfoOP(const int &idProducaoGerado)
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar a informação da Ordem de Produção!");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação da Ordem de Produção."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar a informação da Ordem de Produção!:" << obterDados.lastError().text();
     }
 }
@@ -564,6 +570,7 @@ void Producao::on_tableWidget_OrdemProd_cellDoubleClicked()
     }
 }
 
+// CORRIGIR disponibilidade do botão 'btnGuardar'
 void Producao::on_btnModificar_clicked()
 {
     ui->btnVoltar_producao->setEnabled(true);
@@ -580,6 +587,8 @@ void Producao::on_btnModificar_clicked()
     }
 }
 
+// atualizar o registo da OP da base de dados apenas se estiver no estado Planeada
+// Só é possível alterar a data de produção prevista
 void Producao::atualizarOrdemProducao()
 {
     int idProducao = idProducaoSelecionado.toInt();
@@ -635,101 +644,99 @@ void Producao::on_btnEliminar_clicked()
         return;
     }
 
-    else{
-        QMessageBox::StandardButton confirmar;
-        confirmar = QMessageBox::question(this, "Confirmar",
-                                          "Pretende eliminar a Ordem de Produção " + ui->txtCodigo->text() + "?",
-                                          QMessageBox::Yes|QMessageBox::No);
+    QMessageBox::StandardButton confirmar;
+    confirmar = QMessageBox::question(this, "Confirmar",
+                                      "Pretende eliminar a Ordem de Produção " + ui->txtCodigo->text() + "?",
+                                      QMessageBox::Yes|QMessageBox::No);
 
-        if (confirmar == QMessageBox::Yes)
-        {
-            int idProducao = idProducaoSelecionado.toInt();
+    if (confirmar == QMessageBox::Yes)
+    {
+        int idProducao = idProducaoSelecionado.toInt();
 
-            QSqlDatabase bd = QSqlDatabase::database();
-            bd.transaction();
+        QSqlDatabase bd = QSqlDatabase::database();
+        bd.transaction();
 
-            // obter o ID_Encomenda
-            QSqlQuery obterIdEncomenda;
-            obterIdEncomenda.prepare("SELECT ID_Encomenda FROM producao WHERE producao.ID_Producao = :ID_Producao;");
-            obterIdEncomenda.bindValue(":ID_Producao", idProducao);
+        // obter o ID_Encomenda
+        QSqlQuery obterIdEncomenda;
+        obterIdEncomenda.prepare("SELECT ID_Encomenda FROM producao WHERE producao.ID_Producao = :ID_Producao;");
+        obterIdEncomenda.bindValue(":ID_Producao", idProducao);
 
-            if (!obterIdEncomenda.exec()) {
-                qDebug() << "Falha ao obter o ID_Encomenda:" << obterIdEncomenda.lastError().text();
-                return;
-            }
-            if (!obterIdEncomenda.next()) {
-                qDebug() << "Encomenda não encontrada.";
-                return;
-            }
-
-            int idEncomenda = obterIdEncomenda.value("ID_Encomenda").toInt();
-
-            QSqlQuery obterIdProduto;
-            obterIdProduto.prepare("SELECT ID_Produto FROM producaodetalhe WHERE ID_Producao = :ID_Producao;");
-            obterIdProduto.bindValue(":ID_Producao", idProducao);
-
-            if (!obterIdProduto.exec()) {
-                qDebug() << "Falha ao obter o ID_Produto:" << obterIdProduto.lastError().text();
-                return;
-            }
-            if (!obterIdProduto.next()) {
-                qDebug() << "Produto não encontrado.";
-                return;
-            }
-
-            int idProduto = obterIdProduto.value("ID_Produto").toInt();
-
-            // Atualizar o campo Produzido na tabela 'encomendaDetalhe'
-            QSqlQuery updateProduzido;
-            updateProduzido.prepare("UPDATE encomendadetalhe SET Produzido = 0 "
-                                    "WHERE ID_Encomenda = :ID_Encomenda AND ID_Produto = :ID_Produto;");
-            updateProduzido.bindValue(":ID_Encomenda", idEncomenda);
-            updateProduzido.bindValue(":ID_Produto", idProduto);
-
-            if (!updateProduzido.exec()) {
-                qDebug() << "Falha ao atualizar a coluna Produzido na tabela encomendaDetalhe:" << updateProduzido.lastError().text();
-                bd.rollback(); // Desfaz a transação
-                return;
-            }
-
-            QSqlQuery eliminar;
-            // Excluir registos da tabela 'producaoDetalhe', que contem a chave secundária
-            eliminar.prepare("DELETE FROM producaoDetalhe WHERE ID_Producao = :ID_Producao");
-            eliminar.bindValue(":ID_Producao", idProducao);
-            if (!eliminar.exec()) {
-                bd.rollback(); // Reverte a transação se ocorrer um erro
-                qDebug() << "Erro ao excluir o registo da tabela producaoDetalhe:" << eliminar.lastError().text();
-                return;
-            }
-
-            // Excluir registos da tabela 'producao', que contem a chave primária
-            eliminar.prepare("DELETE FROM producao WHERE ID_Producao = :ID_Producao");
-            eliminar.bindValue(":ID_Producao", idProducao);
-            if (!eliminar.exec()) {
-                bd.rollback(); // Reverte a transação se ocorrer um erro
-                qDebug() << "Erro ao excluir o registo da tabela producao:" << eliminar.lastError().text();
-                return;
-            }
-
-            if (!bd.commit()) {
-                QMessageBox::critical(this, "Erro na base de dados", "Falha ao eliminar o registo da Ordem de Produção da base de dados."
-                                                                     "\nPor favor, contacte o suporte!");
-                return;
-            }
-            QMessageBox::information(this, "Aviso", "Registo eliminado com sucesso!");
-
-            ui->btnVoltar_producao->setEnabled(true);
-            ui->btnEliminar->setEnabled(false);
-            ui->btnGuardar->setEnabled(false);
-            ui->btnCancelar->setEnabled(false);
-            ui->btnModificar->setEnabled(false);
-            ui->btnFechar->setEnabled(false);
-            ui->btnProducao->setEnabled(false);
-
-            limparCampos();
-            desabilitarCampos();
-            carregarDadosProducao();
+        if (!obterIdEncomenda.exec()) {
+            qDebug() << "Falha ao obter o ID_Encomenda:" << obterIdEncomenda.lastError().text();
+            return;
         }
+        if (!obterIdEncomenda.next()) {
+            qDebug() << "Encomenda não encontrada.";
+            return;
+        }
+
+        int idEncomenda = obterIdEncomenda.value("ID_Encomenda").toInt();
+
+        QSqlQuery obterIdProduto;
+        obterIdProduto.prepare("SELECT ID_Produto FROM producaodetalhe WHERE ID_Producao = :ID_Producao;");
+        obterIdProduto.bindValue(":ID_Producao", idProducao);
+
+        if (!obterIdProduto.exec()) {
+            qDebug() << "Falha ao obter o ID_Produto:" << obterIdProduto.lastError().text();
+            return;
+        }
+        if (!obterIdProduto.next()) {
+            qDebug() << "Produto não encontrado.";
+            return;
+        }
+
+        int idProduto = obterIdProduto.value("ID_Produto").toInt();
+
+        // Atualizar o campo Produzido na tabela 'encomendaDetalhe'
+        QSqlQuery updateProduzido;
+        updateProduzido.prepare("UPDATE encomendadetalhe SET Produzido = 0 "
+                                "WHERE ID_Encomenda = :ID_Encomenda AND ID_Produto = :ID_Produto;");
+        updateProduzido.bindValue(":ID_Encomenda", idEncomenda);
+        updateProduzido.bindValue(":ID_Produto", idProduto);
+
+        if (!updateProduzido.exec()) {
+            qDebug() << "Falha ao atualizar a coluna Produzido na tabela encomendaDetalhe:" << updateProduzido.lastError().text();
+            bd.rollback(); // Desfaz a transação
+            return;
+        }
+
+        QSqlQuery eliminar;
+        // Excluir registos da tabela 'producaoDetalhe', que contem a chave secundária
+        eliminar.prepare("DELETE FROM producaoDetalhe WHERE ID_Producao = :ID_Producao");
+        eliminar.bindValue(":ID_Producao", idProducao);
+        if (!eliminar.exec()) {
+            bd.rollback(); // Reverte a transação se ocorrer um erro
+            qDebug() << "Erro ao excluir o registo da tabela producaoDetalhe:" << eliminar.lastError().text();
+            return;
+        }
+
+        // Excluir registos da tabela 'producao', que contem a chave primária
+        eliminar.prepare("DELETE FROM producao WHERE ID_Producao = :ID_Producao");
+        eliminar.bindValue(":ID_Producao", idProducao);
+        if (!eliminar.exec()) {
+            bd.rollback(); // Reverte a transação se ocorrer um erro
+            qDebug() << "Erro ao excluir o registo da tabela producao:" << eliminar.lastError().text();
+            return;
+        }
+
+        if (!bd.commit()) {
+            QMessageBox::critical(this, "Erro na base de dados", "Falha ao eliminar o registo da Ordem de Produção da base de dados."
+                                                                 "\nPor favor, contacte o suporte!");
+            return;
+        }
+        QMessageBox::information(this, "Aviso", "Registo eliminado com sucesso!");
+
+        ui->btnVoltar_producao->setEnabled(true);
+        ui->btnEliminar->setEnabled(false);
+        ui->btnGuardar->setEnabled(false);
+        ui->btnCancelar->setEnabled(false);
+        ui->btnModificar->setEnabled(false);
+        ui->btnFechar->setEnabled(false);
+        ui->btnProducao->setEnabled(false);
+
+        limparCampos();
+        desabilitarCampos();
+        carregarDadosProducao();
     }
 }
 
@@ -798,6 +805,7 @@ void Producao::on_btnProducao_clicked()
 }
 
 // Muda o Status da OP de 'Em progresso' para "Fechada"
+// atualiza a quantidade de produto em stock
 void Producao::on_btnFechar_clicked()
 {
     int idProducao = idProducaoSelecionado.toInt();
@@ -836,7 +844,7 @@ void Producao::on_btnFechar_clicked()
 
     QSqlQuery obterInfoProduto;
     obterInfoProduto.prepare("SELECT producaoDetalhe.ID_Produto, producaoDetalhe.Qtd_produto, produto.Codigo_Produto "
-                             "FROM producaoDetalhe LEFT JOIN produto ON producaoDetalhe.ID_Produto = produto.ID_Produto "
+                             "FROM producaoDetalhe INNER JOIN produto ON producaoDetalhe.ID_Produto = produto.ID_Produto "
                              "WHERE ID_Producao = :ID_Producao");
     obterInfoProduto.bindValue(":ID_Producao", idProducao);
     int idProduto = 0, quantProduto = 0;
@@ -849,7 +857,7 @@ void Producao::on_btnFechar_clicked()
         qDebug() << "Erro ao obter info produto:" << obterInfoProduto.lastError().text();
     }
 
-    // aumentar a quantidade total de produto em stock
+    // aumentar a quantidade total de produto em stock  //CONFIRMAR se é necessário atualizar a quantidade disponivel
     QSqlQuery atualizarStock;
     atualizarStock.prepare("UPDATE stock SET Qtd_total = Qtd_total + :novaQuantidade WHERE ID_Produto = :ID_Produto");
     atualizarStock.bindValue(":novaQuantidade", quantProduto);
@@ -975,15 +983,15 @@ void Producao::carregarDadosProducao()
 
     obterDados.prepare("SELECT producao.ID_Producao, producao.Num_OP, encomenda.Num_Encomenda, produto.Codigo_Produto, "
                        "produto.Produto, producao.Qtd_produzida, producao.Status_OP, producao.Data_ordemProducao "
-                       "FROM producao LEFT JOIN  encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
-                       "LEFT JOIN  producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
-                       "LEFT JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto;");
+                       "FROM producao INNER JOIN  encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
+                       "INNER JOIN  producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
+                       "INNER JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto;");
 
     //verificar o acesso à BD
     if(obterDados.exec())
     {
         int linha = 0;
-        ui->tableWidget_OrdemProd->setColumnCount(8);
+        ui->tableWidget_OrdemProd->setColumnCount(8);  // CORRIGIR formatar data
 
         while(obterDados.next())
         {
@@ -1028,7 +1036,8 @@ void Producao::carregarDadosProducao()
     }
     else
     {
-        QMessageBox::critical(this, "Atenção", "Erro ao carregar a informação das Ordens de Produção na tabela.");
+        QMessageBox::critical(this, "Erro na base de dados", "Falha ao carregar a informação das OPs na tabela Lista de Ordens de Produção."
+                                                             "\nPor favor, contacte o suporte!");
         qDebug() << "Erro ao carregar a informação das Ordens de Produção na tabela:" << obterDados.lastError().text();
         qDebug() << "Consulta SQL Produção:" << obterDados.lastQuery();
     }
@@ -1052,9 +1061,9 @@ void Producao::on_btnPesquisar_clicked()
     // construir a consulta SQL
     QString pesquisa = "SELECT producao.ID_Producao, producao.Num_OP, encomenda.Num_Encomenda, produto.Codigo_Produto, "
                        "produto.Produto, producao.Qtd_produzida, producao.Status_OP, producao.Data_ordemProducao "
-                       "FROM producao LEFT JOIN encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
-                       "LEFT JOIN  producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
-                       "LEFT JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto "
+                       "FROM producao INNER JOIN encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
+                       "INNER JOIN  producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
+                       "INNER JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto "
                        "WHERE 1 = 1 ";
 
 
