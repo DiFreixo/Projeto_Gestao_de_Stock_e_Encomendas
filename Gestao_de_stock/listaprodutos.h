@@ -34,7 +34,7 @@ private:
     void limparCampos();
     void desabilitarCampos();
     void habilitarCampos();
-    void atualizarProduto();
+    void atualizarProduto(QString produto, QString descricao, int stockMin, int diametro, int peso, int altura, int volume, double precoVenda, QString gama, QString cor);
     void ajustarVisibilidadeBotoes(bool isEdited);
     bool verificarCampos();
 

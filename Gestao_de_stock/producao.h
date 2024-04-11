@@ -36,8 +36,8 @@ private:
     void calcularQuantidadeTotalCabecalho();
     QMap<QString, QList<QString>> produtosEncomendaSelecionada(const QString &nrEncomenda, bool);
     void apresentarInfoOP(const int &idProducaoGerado);
-    void atualizarOrdemProducao();
-
+    void atualizarOrdemProducao(QString dataProducao);
+    void habilitarBotaoGuardar();
 
     //atributos da classe
     QString idProducaoSelecionado = "";

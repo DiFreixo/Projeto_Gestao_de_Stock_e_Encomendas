@@ -97,7 +97,12 @@ void Clientes::on_btnGuardar_clicked()
 
     if(!ui->txtRegisto->text().isEmpty()) //cliente já existe na base de dados
     {
-        atualizarCliente();
+        // Antes de proceder com a atualização, verificar os campos
+        if (!verificarCampos()) {
+            qDebug() << "Falha na verificação dos campos.";
+            return;
+        }
+        atualizarCliente(cliente, nifNumero, telefone, email, endereco, observacoes);
     }
     else  // novo cliente a ser guardado na base de dados
     {
@@ -142,7 +147,7 @@ void Clientes::on_btnGuardar_clicked()
 
     ui->btnVoltar_clientes->setEnabled(true);
     ui->btnEliminar->setEnabled(false);
-    ui->btnGuardar->setEnabled(true);
+    ui->btnGuardar->setEnabled(false);
     ui->btnCancelar->setEnabled(true);
     ui->btnModificar->setEnabled(false);
     carregarDadosClientes();
@@ -165,7 +170,7 @@ void Clientes::carregarDadosClientes()
     limparTableWidget(ui->tableWidget_clientes);
 
     QSqlQuery obterDados;
-    obterDados.prepare("SELECT ID_Cliente, NIF, Cliente, Telefone, Email, Data_criacao FROM cliente;"); // Corrigir  formato data
+    obterDados.prepare("SELECT ID_Cliente, NIF, Cliente, Telefone, Email, Data_criacao FROM cliente;");
 
     //verificar o acesso à BD
     if(obterDados.exec())
@@ -183,6 +188,12 @@ void Clientes::carregarDadosClientes()
             {
                 QTableWidgetItem* novoItem = new QTableWidgetItem(obterDados.value(coluna).toString());
                 ui->tableWidget_clientes->setItem(linha, coluna, novoItem);
+
+                // formatar data
+                QString dataStr = obterDados.value("Data_criacao").toString();
+                QDateTime dataHora = QDateTime::fromString(dataStr, Qt::ISODate);
+                QString dataFormatada = dataHora.toString("dd-MM-yyyy HH:mm");
+                ui->tableWidget_clientes->setItem(linha, 5, new QTableWidgetItem(dataFormatada));
             }
             linha++;
         }
@@ -284,24 +295,10 @@ void Clientes::on_btnModificar_clicked()
     habilitarCampos();
 }
 
-void Clientes::atualizarCliente()
+void Clientes::atualizarCliente(QString cliente, int nifNumero, QString telefone, QString email, QString endereco, QString observacoes)
 {  
     int idCliente = idClienteSelecionado.toInt();
 
-    QString cliente = ui->txtNome->text().trimmed();
-    int nifNumero = ui->txtNIF->text().toInt();
-    QString telefone = ui->txtTelefone->text();
-    QString email = ui->txtEmail->text().trimmed();
-    QString endereco = ui->txtEndereco->toPlainText().trimmed();
-    QString observacoes = ui->txtObservacoes->toPlainText().trimmed();
-
-    // Antes de proceder com a atualização, verificar os campos
-    if (!verificarCampos()) {
-        qDebug() << "Falha na verificação dos campos.";
-        return;
-    }
-
-    // ligação à base de dados para guardar/atualizar os valores
     QSqlDatabase bd = QSqlDatabase::database();
     bd.transaction(); // Inicia uma transação
 

@@ -31,7 +31,7 @@ private:
     void desabilitarCampos();
     void habilitarCampos();
     void limparTableWidget(QTableWidget *limpaTW);
-    void atualizarCliente();
+    void atualizarCliente(QString cliente, int nifNumero, QString telefone, QString email, QString endereco, QString observacoes);
     bool verificarCampos();
 
     // atributos da classe

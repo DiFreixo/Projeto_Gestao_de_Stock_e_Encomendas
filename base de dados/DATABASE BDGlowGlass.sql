@@ -40,7 +40,29 @@ PRIMARY KEY (ID_Stock),
 FOREIGN KEY (ID_Produto) references Produto(ID_Produto)
 	on update cascade
 );
-                   
+
+-- CALCULAR  A Qtd_disponivel
+-- Criação do gatilho para atualização
+DELIMITER $
+CREATE TRIGGER UpdateStockDisponivel BEFORE UPDATE ON Stock
+FOR EACH ROW
+BEGIN
+    SET NEW.Qtd_disponivel = GREATEST(0, NEW.Qtd_total - NEW.Qtd_reservada);
+END$
+DELIMITER ;
+
+
+-- Criação do gatilho para inserção
+DELIMITER $
+CREATE TRIGGER InsertStockDisponivel BEFORE INSERT ON Stock
+FOR EACH ROW
+BEGIN
+    SET NEW.Qtd_disponivel = GREATEST(0, NEW.Qtd_total - NEW.Qtd_reservada);
+END$
+DELIMITER ;
+
+
+
 CREATE TABLE Cliente (
 ID_Cliente   INT AUTO_INCREMENT,	
 NIF   		 INT(9) NOT NULL UNIQUE,

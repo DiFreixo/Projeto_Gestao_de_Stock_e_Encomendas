@@ -119,35 +119,39 @@ void ListaProdutos::validarCampo(QLineEdit *campo, int min, int max, const QStri
 // Guardar o registo do produto na base de dados
 void ListaProdutos::on_btnGuardar_clicked()
 {
+    QString produto = ui->txtNome->text().trimmed();
+    QString descricao = ui->txtDescricao->toPlainText().trimmed();
+    int stockMin = ui->txtStockMin->text().toInt();
+    int diametro = ui->txtDiametro->text().toInt();
+    int peso = ui->txtPeso->text().toInt();
+    int altura = ui->txtAltura->text().toInt();
+    int volume = ui->txtVolume->text().toInt();
+
+    //substituir a vírgula pelo ponto para guardar o valor na base de dados
+    QString precoVendaSemVirgula = ui->txtPrecoVenda->text();
+    precoVendaSemVirgula.replace(',', '.');
+    precoVenda = precoVendaSemVirgula.toDouble();
+
+    QString gama = "", cor = "";
+    // verificar qual radioButton está selecionado para obter a Gama e a Cor
+    QAbstractButton *gamas = ui->buttonGroup_Gama->checkedButton();
+    gama = gamas->text();
+
+    QAbstractButton *cores = ui->buttonGroup_Cor->checkedButton();
+    cor = cores->text();
     // verificar se é, um novo produto a ser guardado na base de dados ou
     // se já é um produto existente que, será modificado e guardadas as suas alterações na base de dados
     if(!ui->txtRegisto->text().isEmpty()) //produto já existe na base de dados
     {
-        atualizarProduto();
+        // Antes de proceder com a atualização, verificar os campos
+        if (!verificarCampos()) {
+            qDebug() << "Falha na verificação dos campos.";
+            return;
+        }
+        atualizarProduto(produto, descricao, stockMin, diametro, peso, altura, volume, precoVenda, gama, cor);
     }
     else  // novo produto a ser guardado na base de dados
     {
-        QString produto = ui->txtNome->text().trimmed();
-        QString descricao = ui->txtDescricao->toPlainText().trimmed();
-        int stockMin = ui->txtStockMin->text().toInt();
-        int diametro = ui->txtDiametro->text().toInt();
-        int peso = ui->txtPeso->text().toInt();
-        int altura = ui->txtAltura->text().toInt();
-        int volume = ui->txtVolume->text().toInt();
-
-        //substituir a vírgula pelo ponto para guardar o valor na base de dados
-        QString precoVendaSemVirgula = ui->txtPrecoVenda->text();
-        precoVendaSemVirgula.replace(',', '.');
-        precoVenda = precoVendaSemVirgula.toDouble();
-
-        QString gama = "", cor = "";
-        // verificar qual radioButton está selecionado para obter a Gama e a Cor
-        QAbstractButton *gamas = ui->buttonGroup_Gama->checkedButton();
-        gama = gamas->text();
-
-        QAbstractButton *cores = ui->buttonGroup_Cor->checkedButton();
-        cor = cores->text();
-
         if (!verificarCampos()) {
             qDebug() << "Falha na verificação dos campos.";
             return;
@@ -324,7 +328,7 @@ void ListaProdutos::carregarDadosProdutos()
         while(obterDados.next())
         {
             //inserir uma linha na tabela do formulário
-            ui->tableWidget_ListaProdutos->insertRow(linha);  // CORRIGIR formatar data
+            ui->tableWidget_ListaProdutos->insertRow(linha);
             for(int coluna = 0; coluna < 11; coluna++)
             {
                 QTableWidgetItem* novoItem = new QTableWidgetItem(obterDados.value(coluna).toString());
@@ -335,8 +339,13 @@ void ListaProdutos::carregarDadosProdutos()
                 QString precoVendaSemPonto =  QString::number(precoVenda, 'f', 2);
                 precoVendaSemPonto = precoVendaSemPonto.replace('.', ',');
                 ui->tableWidget_ListaProdutos->setItem(linha, 9, new QTableWidgetItem(precoVendaSemPonto));
-            }
 
+                // formatar data
+                QString dataStr = obterDados.value("Data_criacao").toString();
+                QDateTime dataHora = QDateTime::fromString(dataStr, Qt::ISODate);
+                QString dataFormatada = dataHora.toString("dd-MM-yyyy HH:mm");
+                ui->tableWidget_ListaProdutos->setItem(linha, 10, new QTableWidgetItem(dataFormatada));
+            }
             linha++;
         }
 
@@ -480,10 +489,10 @@ void ListaProdutos::on_tableWidget_ListaProdutos_cellDoubleClicked()
         // Considerar as produtos expedidos, expedicao.Expedida = 'Sim'
         QSqlQuery soma;
         soma.prepare("SELECT sum(expedicaoDetalhe.Qtd_produto) as total "
-                           "FROM expedicaoDetalhe "
-                           "INNER JOIN expedicao ON expedicaoDetalhe.ID_Expedicao = expedicao.ID_Expedicao  "
-                           "WHERE expedicaoDetalhe.ID_Produto = :idProduto AND "
-                           "expedicao.Expedida = 'Sim';");
+                       "FROM expedicaoDetalhe "
+                       "INNER JOIN expedicao ON expedicaoDetalhe.ID_Expedicao = expedicao.ID_Expedicao  "
+                       "WHERE expedicaoDetalhe.ID_Produto = :idProduto AND "
+                       "expedicao.Expedida = 'Sim';");
         soma.bindValue(":idProduto", idProduto);
 
         if(soma.exec() && soma.next()){
@@ -513,37 +522,10 @@ void ListaProdutos::on_btnModificar_clicked()
     ajustarVisibilidadeBotoes(true);
 }
 
-void ListaProdutos::atualizarProduto()
+void ListaProdutos::atualizarProduto(QString produto, QString descricao, int stockMin, int diametro, int peso, int altura,
+                                     int volume, double precoVenda, QString gama, QString cor)
 {  
     int idProduto = idProdutoSelecionado.toInt();
-
-    QString produto = ui->txtNome->text().trimmed();
-    QString descricao = ui->txtDescricao->toPlainText().trimmed();
-    int stockMin = ui->txtStockMin->text().toInt();
-    int diametro = ui->txtDiametro->text().toInt();
-    int peso = ui->txtPeso->text().toInt();
-    int altura = ui->txtAltura->text().toInt();
-    int volume = ui->txtVolume->text().toInt();
-
-    //substituir a vírgula pelo ponto para guardar o valor na base de dados
-    QString precoVendaSemVirgula = ui->txtPrecoVenda->text();
-    precoVendaSemVirgula.replace(',', '.');
-    precoVenda = precoVendaSemVirgula.toDouble();
-
-    QString gama = "", cor = "";
-    // verificar qual radioButton está selecionado para obter a Gama e a Cor
-    QAbstractButton *gamas = ui->buttonGroup_Gama->checkedButton();
-    gama = gamas->text();
-
-    QAbstractButton *cores = ui->buttonGroup_Cor->checkedButton();
-    cor = cores->text();
-
-    // Antes de proceder com a atualização, verificar os campos
-    if (!verificarCampos()) {
-        qDebug() << "Falha na verificação dos campos.";
-        return;
-    }
-
     // ligação à base de dados para guardar/atualizar os valores
     QSqlDatabase bd = QSqlDatabase::database();
     bd.transaction(); // Inicia uma transação
@@ -607,7 +589,7 @@ void ListaProdutos::atualizarProduto()
 }
 
 // Eliminar registo do produto da base de dados
-//Nota: só é possível eliminar registos de produtos com stock vazio e se não tiver nehuma encomenda associado a ele
+//Nota: só é possível eliminar registos de produtos com stock vazio e se não tiver nehuma encomenda associada
 void ListaProdutos::on_btnEliminar_clicked()
 {
     if (ui->txtRegisto->text().isEmpty()){

@@ -290,10 +290,13 @@ void Producao::on_btnGuardar_clicked()
     QString dataProducaoFormatada = dataProducao.toString("yyyy-MM-dd");
     int qtdTotal = ui->txtQtdTotal->text().toInt();
 
-
     if(!ui->txtRegisto->text().isEmpty()) //OP já existe na base de dados
     {
-        atualizarOrdemProducao();
+        if (!verificarCamposCabecalho()) {
+            qDebug() << "Falha na verificação dos campos do cabeçalho.";
+            return;
+        }
+        atualizarOrdemProducao(dataProducaoFormatada);
     }
     else  // novo registo a ser guardado na base de dados
     {
@@ -425,6 +428,7 @@ void Producao::on_btnGuardar_clicked()
 
         qDebug() << "Ordem de produção registada com sucesso.";
         QMessageBox::information(this, "Aviso", "Ordem de produção registada com sucesso!");
+
 
         //apresentar a ficha do produto atualizada
         apresentarInfoOP(idProducaoGerado);
@@ -570,7 +574,6 @@ void Producao::on_tableWidget_OrdemProd_cellDoubleClicked()
     }
 }
 
-// CORRIGIR disponibilidade do botão 'btnGuardar'
 void Producao::on_btnModificar_clicked()
 {
     ui->btnVoltar_producao->setEnabled(true);
@@ -589,19 +592,9 @@ void Producao::on_btnModificar_clicked()
 
 // atualizar o registo da OP da base de dados apenas se estiver no estado Planeada
 // Só é possível alterar a data de produção prevista
-void Producao::atualizarOrdemProducao()
+void Producao::atualizarOrdemProducao(QString dataProducao)
 {
     int idProducao = idProducaoSelecionado.toInt();
-
-    QString dataProducaoStr = ui->txtDataProducao->text();
-    QDate dataProducao = QDate::fromString(dataProducaoStr, "dd-MM-yyyy");
-    QString dataProducaoFormatada = dataProducao.toString("yyyy-MM-dd");
-
-    // Antes de proceder com a atualização, verificar os campos
-    if (!verificarCamposCabecalho()) {
-        qDebug() << "Falha na verificação dos campos.";
-        return;
-    }
 
     // ligação à base de dados para guardar/atualizar os valores
     QSqlDatabase bd = QSqlDatabase::database();
@@ -613,7 +606,7 @@ void Producao::atualizarOrdemProducao()
     dados.prepare("UPDATE producao SET Data_Producao = :Data_Producao "
                   "WHERE ID_Producao = :ID_Producao");
     dados.bindValue(":ID_Producao", idProducao);
-    dados.bindValue(":Data_Producao", dataProducaoFormatada);
+    dados.bindValue(":Data_Producao", dataProducao);
 
     if (!dados.exec()) {
         qDebug() << "Falha ao atualizar dados na tabela Producao:" << dados.lastError().text();
@@ -857,13 +850,16 @@ void Producao::on_btnFechar_clicked()
         qDebug() << "Erro ao obter info produto:" << obterInfoProduto.lastError().text();
     }
 
-    // aumentar a quantidade total de produto em stock  //CONFIRMAR se é necessário atualizar a quantidade disponivel
-    QSqlQuery atualizarStock;
-    atualizarStock.prepare("UPDATE stock SET Qtd_total = Qtd_total + :novaQuantidade WHERE ID_Produto = :ID_Produto");
-    atualizarStock.bindValue(":novaQuantidade", quantProduto);
-    atualizarStock.bindValue(":ID_Produto", idProduto);
-    if (!atualizarStock.exec()) {
-        qDebug() << "Falha ao atualizar dados na tabela stock:" << atualizarStock.lastError().text();
+    // aumentar a quantidade total de produto em stock e recalcular a quantidade de stock disponível
+    QSqlQuery atualizaStock;
+    // Atualizar na tabela 'stock'
+    atualizaStock.prepare("UPDATE stock SET Qtd_total = Qtd_total + :novaQuantidade "
+                          "WHERE ID_Produto = :idProduto");
+    atualizaStock.bindValue(":novaQuantidade", quantProduto);
+    atualizaStock.bindValue(":idProduto", idProduto);
+
+    if (!atualizaStock.exec()) {
+        qDebug() << "Falha ao atualizar dados na tabela stock:" << atualizaStock.lastError().text();
         bd.rollback(); // Desfaz a transação
         return;
     }
@@ -910,13 +906,19 @@ bool Producao::verificarCamposCabecalho()
         ui->txtDataProducao->setFocus();
         return false;
     }
+
     return true;
 }
 
-// CORRIGIR
 bool Producao::verificarCamposLinhas()
 {
-    //cmbProdutos
+    QComboBox* cmbProdutos = qobject_cast<QComboBox*>(ui->tableWidget_Produtos->cellWidget(0, 0));
+    if(cmbProdutos->currentIndex() == 0){
+        ui->lblErro->setText("Atenção! Selecione o código do produto.");
+        QTimer::singleShot(3000, ui->lblErro, &QLabel::clear);
+        cmbProdutos->setFocus();
+        return false;
+    }
     return true;
 }
 
@@ -991,7 +993,7 @@ void Producao::carregarDadosProducao()
     if(obterDados.exec())
     {
         int linha = 0;
-        ui->tableWidget_OrdemProd->setColumnCount(8);  // CORRIGIR formatar data
+        ui->tableWidget_OrdemProd->setColumnCount(8);
 
         while(obterDados.next())
         {
@@ -1000,6 +1002,12 @@ void Producao::carregarDadosProducao()
             {
                 QTableWidgetItem* novoItem = new QTableWidgetItem(obterDados.value(coluna).toString());
                 ui->tableWidget_OrdemProd->setItem(linha, coluna, novoItem);
+
+                // formatar data
+                QString dataStr = obterDados.value("Data_ordemProducao").toString();
+                QDateTime dataHora = QDateTime::fromString(dataStr, Qt::ISODate);
+                QString dataFormatada = dataHora.toString("dd-MM-yyyy HH:mm");
+                ui->tableWidget_OrdemProd->setItem(linha, 7, new QTableWidgetItem(dataFormatada));
             }
 
             linha++;
@@ -1020,13 +1028,13 @@ void Producao::carregarDadosProducao()
         //ui->tableWidget_OrdemProd->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
         ui->tableWidget_OrdemProd->verticalHeader()->resizeSections(QHeaderView::ResizeToContents);
         //definir a largura da coluna
-        ui->tableWidget_OrdemProd->setColumnWidth(0, 80);
-        ui->tableWidget_OrdemProd->setColumnWidth(1, 100);
-        ui->tableWidget_OrdemProd->setColumnWidth(2, 100);
-        ui->tableWidget_OrdemProd->setColumnWidth(3, 100);
+        ui->tableWidget_OrdemProd->setColumnWidth(0, 90);
+        ui->tableWidget_OrdemProd->setColumnWidth(1, 110);
+        ui->tableWidget_OrdemProd->setColumnWidth(2, 110);
+        ui->tableWidget_OrdemProd->setColumnWidth(3, 110);
         ui->tableWidget_OrdemProd->setColumnWidth(4, 180);
         ui->tableWidget_OrdemProd->setColumnWidth(5, 120);
-        ui->tableWidget_OrdemProd->setColumnWidth(6, 100);
+        ui->tableWidget_OrdemProd->setColumnWidth(6, 120);
         ui->tableWidget_OrdemProd->setColumnWidth(7, 100);
         // desabilitar a edição dos dados
         ui->tableWidget_OrdemProd->setEditTriggers(QAbstractItemView::NoEditTriggers);

@@ -341,7 +341,15 @@ void Encomendas::on_btnGuardar_clicked()
 
     if(!ui->txtRegisto->text().isEmpty()) //Encomenda já existe na base de dados
     {
-        atualizarEncomenda();
+        if (!verificarCamposCabecalho()) {
+            qDebug() << "Falha na verificação dos campos do cabeçalho.";
+            return;
+        }
+        if (!verificarCamposLinhasAtualizar()) {
+            qDebug() << "Falha na verificação dos campos das linhas.";
+            return;
+        }
+        atualizarEncomenda(dataEntregaFormatada, qtdTotal, totalVendas);
     }
     else  // nova encomenda a ser guardado na base de dados
     {
@@ -350,6 +358,10 @@ void Encomendas::on_btnGuardar_clicked()
             return;
         }
 
+        if (!verificarCamposLinhas()) {
+            qDebug() << "Falha na verificação dos campos das linhas.";
+            return;
+        }
         // Primeiro, obter o ID_Cliente
         QSqlQuery obterIdCliente;
         obterIdCliente.prepare("SELECT ID_Cliente FROM cliente WHERE NIF = :nif");
@@ -389,7 +401,7 @@ void Encomendas::on_btnGuardar_clicked()
 
         // dependendo do número linhas que a tabela tiver
         // obter do ID_Produto e guardar as informações na base de dados na tabela encomendaDetalhe
-        // atualizar a tabela stock com a Qtd_reservada (somar à existente)
+        // atualizar a tabela stock com a Qtd_reservada (somar à existente) e recalcular a quantidade disponível
         int linhas = ui->tableWidget_ProdutosEnc->rowCount();
         for (int linha = 0; linha < linhas; linha++)
         {
@@ -439,12 +451,15 @@ void Encomendas::on_btnGuardar_clicked()
             }
 
             // Atualizar na tabela 'stock' a quantidade reservada de produto
-            guardarDados.prepare("UPDATE stock SET Qtd_reservada = Qtd_reservada + :novaQuantidade WHERE ID_Produto = :ID_Produto");
-            guardarDados.bindValue(":novaQuantidade", quantidade);
-            guardarDados.bindValue(":ID_Produto", idProduto);
+            QSqlQuery atualizaStock;
+            // Atualizar na tabela 'stock'
+            atualizaStock.prepare("UPDATE stock SET Qtd_reservada = Qtd_reservada + :novaQuantidade "
+                                  "WHERE ID_Produto = :ID_Produto");
+            atualizaStock.bindValue(":novaQuantidade", quantidade);
+            atualizaStock.bindValue(":ID_Produto", idProduto);
 
-            if (!guardarDados.exec()) {
-                qDebug() << "Falha ao atualizar dados na tabela stock:" << guardarDados.lastError().text();
+            if (!atualizaStock.exec()) {
+                qDebug() << "Falha ao atualizar dados na tabela stock:" << atualizaStock.lastError().text();
 
                 QSqlQuery apagarDados;
                 // Remover da tabela 'encomendaDetalhe' o produto inserido anteriormente
@@ -515,7 +530,7 @@ void Encomendas::carregarDadosEncomendas()
     if(obterDados.exec())
     {
         int linha = 0;
-        ui->tableWidget_encomendas->setColumnCount(7);  // CORRIGIR formatar data
+        ui->tableWidget_encomendas->setColumnCount(7);
 
         while(obterDados.next())
         {
@@ -530,6 +545,12 @@ void Encomendas::carregarDadosEncomendas()
                 QString valorTotalSemPonto =  QString::number(valorTotal, 'f', 2);
                 valorTotalSemPonto = valorTotalSemPonto.replace('.', ',');
                 ui->tableWidget_encomendas->setItem(linha, 4, new QTableWidgetItem(valorTotalSemPonto));
+
+                // formatar data
+                QString dataStr = obterDados.value("Data_encomenda").toString();
+                QDateTime dataHora = QDateTime::fromString(dataStr, Qt::ISODate);
+                QString dataFormatada = dataHora.toString("dd-MM-yyyy HH:mm");
+                ui->tableWidget_encomendas->setItem(linha, 6, new QTableWidgetItem(dataFormatada));
             }
             linha++;
         }
@@ -750,21 +771,9 @@ void Encomendas::on_btnModificar_clicked()
 // atualizar o registo da encomenda na base de dados
 // NOTA: só é possível atualizar encomendas que não contenham produtos em produção, encomendaDetalhe.Produzido = 0
 // neste momento só é possível atualizar as quantidades de produto
-void Encomendas::atualizarEncomenda()
+void Encomendas::atualizarEncomenda(QString dataEntrega, int qtdTotal, double totalVendas)
 {
     int idEncomenda = idEncomendaSelecionada.toInt();
-    // obter a informação do cabeçalho
-    QString dataEntregaStr = ui->txtDataEntrega->text();
-    QDate dataEntrega = QDate::fromString(dataEntregaStr, "dd-MM-yyyy");
-    QString dataEntregaFormatada = dataEntrega.toString("yyyy-MM-dd");
-    int qtdTotal = ui->txtQtdTotal->text().toInt();
-    double totalVendas = ui->txtTotalVendas->text().replace(',', '.').toDouble();
-
-    // Antes de proceder com a atualização, verificar os campos
-    if (!verificarCamposCabecalho()) {
-        qDebug() << "Falha na verificação dos campos do cabeçalho.";
-        return;
-    }
 
     // ligação à base de dados
     QSqlDatabase bd = QSqlDatabase::database();
@@ -777,7 +786,7 @@ void Encomendas::atualizarEncomenda()
                                "Valor = :Valor, Qtd_encomenda = :Qtd_encomenda "
                                "WHERE ID_Encomenda = :ID_Encomenda");
     atualizarEncomenda.bindValue(":ID_Encomenda", idEncomenda);
-    atualizarEncomenda.bindValue(":Data_entrega", dataEntregaFormatada);
+    atualizarEncomenda.bindValue(":Data_entrega", dataEntrega);
     atualizarEncomenda.bindValue(":Valor", totalVendas);
     atualizarEncomenda.bindValue(":Qtd_encomenda", qtdTotal);
 
@@ -830,33 +839,6 @@ void Encomendas::atualizarEncomenda()
         double valorProduto = ui->tableWidget_ProdutosEnc->item(linha, 4)->text().replace(',', '.').toDouble();
 
         int diferencaQuantidade = quantProdutoAtual - quantProdutoInicial;
-        /*
-        qDebug() << "ID_EncomendaDetalhe: " << idEncomendaDetalhe;
-        qDebug() << "Quantidade Inicial: " << quantProdutoInicial;
-        qDebug() << "Quantidade Atual: " << quantProdutoAtual;
-        qDebug() << "Diferença de Quantidade: " << diferencaQuantidade;
-        */
-
-        /*
-        // Antes de proceder com a atualização, verificar os campos
-        if (!verificarCamposLinhas()) {
-            qDebug() << "Falha na verificação dos campos das linhas.";
-            return;
-        }*/
-
-
-        /*
-        QSqlQuery atualizarEncomendaDetalhe;
-        // Alterar na tabela 'encomendaDetalhe'
-        atualizarEncomendaDetalhe.prepare("UPDATE encomendaDetalhe SET ID_Produto = :ID_Produto, "
-                                       "Valor = :Valor, Qtd_produto = :Qtd_produto "
-                                       "WHERE ID_EncomendaDetalhe = :ID_EncomendaDetalhe ");
-        atualizarEncomendaDetalhe.bindValue(":ID_EncomendaDetalhe", idEncomendaDetalhe);
-        atualizarEncomendaDetalhe.bindValue(":ID_Produto", idProduto);
-        atualizarEncomendaDetalhe.bindValue(":Valor", valorProduto);
-        atualizarEncomendaDetalhe.bindValue(":Qtd_produto", quantProdutoAtual);
-        */
-
 
         QSqlQuery atualizarEncomendaDetalhe;
         // Alterar na tabela 'encomendaDetalhe'
@@ -873,15 +855,16 @@ void Encomendas::atualizarEncomenda()
             return;
         }
 
-        QSqlQuery atualizarStock;
-        // atualizar na tabela 'stock' a quantidade reservada de produto
-        atualizarStock.prepare("UPDATE stock SET Qtd_reservada = Qtd_reservada + :novaQuantidade WHERE ID_Produto = :ID_Produto");
-        atualizarStock.bindValue(":novaQuantidade", diferencaQuantidade);
-        atualizarStock.bindValue(":ID_Produto", idProduto);
+        // Atualizar na tabela 'stock' a quantidade reservada de produto
+        QSqlQuery atualizaStock;
+        // Atualizar na tabela 'stock'
+        atualizaStock.prepare("UPDATE stock SET Qtd_reservada = Qtd_reservada + :novaQuantidade "
+                              "WHERE ID_Produto = :ID_Produto");
+        atualizaStock.bindValue(":novaQuantidade", diferencaQuantidade);
+        atualizaStock.bindValue(":ID_Produto", idProduto);
 
-
-        if (!atualizarStock.exec()) {
-            qDebug() << "Falha ao atualizar dados na tabela stock:" << atualizarStock.lastError().text();
+        if (!atualizaStock.exec()) {
+            qDebug() << "Falha ao atualizar dados na tabela stock:" << atualizaStock.lastError().text();
             bd.rollback(); // Desfaz a transação
             return;
         }
@@ -1071,6 +1054,7 @@ void Encomendas::on_btnLimparPesquisa_clicked()
     carregarDadosEncomendas();
 }
 
+//verificar se os campos do cabeçalho estão preenchidos
 bool Encomendas::verificarCamposCabecalho()
 {
     if(ui->cmbClientes->currentIndex() == 0){
@@ -1093,11 +1077,68 @@ bool Encomendas::verificarCamposCabecalho()
     return true;
 }
 
-// CORRIGIR
+//verificar se os campos das linhas estão preenchidos
 bool Encomendas::verificarCamposLinhas()
 {
     // verificar se os campos estão todos preenchidos e verificar se tem produtos repetidos
+    QSet<QString> produtosSelecionados;
+    // percorrer todas as linhas do QTableWidget
+    for (int linha = 0; linha < ui->tableWidget_ProdutosEnc->rowCount(); linha++) {
+        QComboBox* cmbProdutos = qobject_cast<QComboBox*>(ui->tableWidget_ProdutosEnc->cellWidget(linha, 0));
+        if(cmbProdutos->currentIndex() == 0){
+            ui->lblErro->setText("Atenção! Selecione o código do produto.");
+            QTimer::singleShot(3000, ui->lblErro, &QLabel::clear);
+            cmbProdutos->setFocus();
+            return false;
+        }
 
+        QString codigoProduto = cmbProdutos->currentText();
+        if (produtosSelecionados.contains(codigoProduto)) {
+            ui->lblErro->setText("Atenção! Produtos repetidos.");
+            QTimer::singleShot(3000, ui->lblErro, &QLabel::clear);
+            cmbProdutos->setFocus();
+            return false;
+        } else {
+            produtosSelecionados.insert(codigoProduto);
+        }
+
+        if(ui->tableWidget_ProdutosEnc->item(linha, 2)->text() == ""){
+            ui->lblErro->setText("Atenção! A célula quantidade está vazia.");
+            QTimer::singleShot(3000, ui->lblErro, &QLabel::clear);
+            ui->tableWidget_ProdutosEnc->editItem(ui->tableWidget_ProdutosEnc->item(linha, 2));
+            return false;
+        }
+
+        if(ui->tableWidget_ProdutosEnc->item(linha, 2)->text().toInt() == 0){
+            ui->lblErro->setText("Atenção! A quantidade não pode ser zero.");
+            QTimer::singleShot(3000, ui->lblErro, &QLabel::clear);
+            ui->tableWidget_ProdutosEnc->editItem(ui->tableWidget_ProdutosEnc->item(linha, 2));
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//verificar se os campos das linhas estão preenchidos na Atualização da encomenda
+bool Encomendas::verificarCamposLinhasAtualizar()
+{
+    // percorrer todas as linhas do QTableWidget
+    for (int linha = 0; linha < ui->tableWidget_ProdutosEnc->rowCount(); linha++) {
+        if(ui->tableWidget_ProdutosEnc->item(linha, 2)->text() == ""){
+            ui->lblErro->setText("Atenção! A célula quantidade está vazia.");
+            QTimer::singleShot(3000, ui->lblErro, &QLabel::clear);
+            ui->tableWidget_ProdutosEnc->editItem(ui->tableWidget_ProdutosEnc->item(linha, 2));
+            return false;
+        }
+
+        if(ui->tableWidget_ProdutosEnc->item(linha, 2)->text().toInt() == 0){
+            ui->lblErro->setText("Atenção! A quantidade não pode ser zero.");
+            QTimer::singleShot(3000, ui->lblErro, &QLabel::clear);
+            ui->tableWidget_ProdutosEnc->editItem(ui->tableWidget_ProdutosEnc->item(linha, 2));
+            return false;
+        }
+    }
     return true;
 }
 

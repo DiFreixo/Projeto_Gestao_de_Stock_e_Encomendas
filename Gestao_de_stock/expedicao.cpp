@@ -634,6 +634,9 @@ void Expedicao::on_btnModificar_clicked()
     atualizarModeloTreeView();
 }
 
+
+
+// CORRIGIR visivilidade da treeView após  btnExpedicao_clicked
 // Muda o status da Expedição de 'Não' para 'Sim'.
 // Apenas posso carregar no botão expedição quando a OP estiver no estado fechada (o produto já deu entrada em stock).
 // Saída do produto do stock - atualiza a quantidade do produto em stock (total, reservada e disponível).
@@ -708,8 +711,7 @@ void Expedicao::on_btnExpedicao_clicked()
         QSqlQuery atualizarStock;
         // atualizar na tabela 'stock'
         atualizarStock.prepare("UPDATE stock SET Qtd_reservada = Qtd_reservada - :novaQuantidade, "
-                               "Qtd_total = Qtd_total - :novaQuantidade, "
-                               "Qtd_disponivel = (Qtd_total - :novaQuantidade) - (Qtd_reservada - :novaQuantidade) "
+                               "Qtd_total = Qtd_total - :novaQuantidade "
                                "WHERE ID_Produto = :ID_Produto");
         atualizarStock.bindValue(":novaQuantidade", quantidade);
         atualizarStock.bindValue(":ID_Produto", idProduto);
@@ -944,8 +946,13 @@ void Expedicao::carregarDadosExpedicao()
             {
                 QTableWidgetItem* novoItem = new QTableWidgetItem(obterDados.value(coluna).toString());
                 ui->tableWidget_expedicoes->setItem(linha, coluna, novoItem);
-            }
 
+                // formatar data
+                QString dataStr = obterDados.value("Data_expedicao").toString();
+                QDateTime dataHora = QDateTime::fromString(dataStr, Qt::ISODate);
+                QString dataFormatada = dataHora.toString("dd-MM-yyyy HH:mm");
+                ui->tableWidget_expedicoes->setItem(linha, 5, new QTableWidgetItem(dataFormatada));
+            }
             linha++;
         }
 
@@ -953,7 +960,7 @@ void Expedicao::carregarDadosExpedicao()
 
         //colocar os títulos das colunas igual à ordem da query 'obterDados'
         QStringList titulos;
-        titulos = {"Registo", "Nr. Expedição", "Cliente", "Quantidade (un)", "Expedida", "Data Expedição"};  // CORRIGIR formatar data
+        titulos = {"Registo", "Nr. Expedição", "Cliente", "Quantidade (un)", "Expedida", "Data Expedição"};
         ui->tableWidget_expedicoes->setHorizontalHeaderLabels(titulos);
         // formatar título
         ui->tableWidget_expedicoes->horizontalHeader()->setStyleSheet("QHeaderView::section {color: white; background-color: #004b23; font: bold 10px}");

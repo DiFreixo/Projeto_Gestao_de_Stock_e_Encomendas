@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     */
 
     QSqlDatabase bd = QSqlDatabase::addDatabase("QMYSQL");
-     /*// phpmyadmin
+    /*// phpmyadmin
     bd.setHostName("localhost");
     bd.setPort(3306);
     bd.setUserName("root");

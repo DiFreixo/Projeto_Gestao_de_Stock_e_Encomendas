@@ -33,10 +33,11 @@ private:
     void limparCampos();
     void desabilitarCampos();
     void habilitarCampos();
-    void atualizarEncomenda();
+    void atualizarEncomenda(QString dataEntrega, int qtdTotal, double totalVendas);
     bool verificarCamposCabecalho();
     bool verificarCamposLinhas();
     void calcularValorTotalCabecalho();
+    bool verificarCamposLinhasAtualizar();
 
     //atributos da classe
     QString idEncomendaSelecionada = "";
