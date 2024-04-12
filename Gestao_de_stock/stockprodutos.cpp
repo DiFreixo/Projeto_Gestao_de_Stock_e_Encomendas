@@ -42,7 +42,7 @@ void StockProdutos::carregarDadosStock()
     obterDadosStock.prepare("SELECT produto.Codigo_Produto, produto.Produto, produtodetalhe.Gama, produto.Stock_minimo, "
                         "stock.Qtd_total, stock.Qtd_reservada, stock.Qtd_disponivel FROM produto "
                         "INNER JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto "
-                        "INNER JOIN stock ON produto.ID_Produto = stock.ID_Produto;");
+                        "INNER JOIN stock ON produto.ID_Produto = stock.ID_Produto ORDER BY produto.Codigo_Produto;");
 
     //verificar o acesso à BD
     if(obterDadosStock.exec())

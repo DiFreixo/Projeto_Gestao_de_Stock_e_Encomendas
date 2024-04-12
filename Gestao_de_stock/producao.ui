@@ -552,7 +552,7 @@ background-color: rgb(208, 208, 208);
        <normaloff>:/img/img/Apagar.png</normaloff>:/img/img/Apagar.png</iconset>
      </property>
     </widget>
-    <widget class="QLabel" name="label_44">
+    <widget class="QLabel" name="lblQuantidade">
      <property name="geometry">
       <rect>
        <x>30</x>

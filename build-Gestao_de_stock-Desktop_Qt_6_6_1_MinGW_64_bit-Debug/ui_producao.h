@@ -51,7 +51,7 @@ public:
     QLineEdit *txtRegisto;
     QLineEdit *txtCodigo;
     QPushButton *btnEliminar;
-    QLabel *label_44;
+    QLabel *lblQuantidade;
     QPushButton *btnModificar;
     QLabel *label_10;
     QLineEdit *txtDataCriacao;
@@ -267,9 +267,9 @@ public:
         QIcon icon6;
         icon6.addFile(QString::fromUtf8(":/img/img/Apagar.png"), QSize(), QIcon::Normal, QIcon::Off);
         btnEliminar->setIcon(icon6);
-        label_44 = new QLabel(page2_RegistarOPs);
-        label_44->setObjectName("label_44");
-        label_44->setGeometry(QRect(30, 340, 131, 16));
+        lblQuantidade = new QLabel(page2_RegistarOPs);
+        lblQuantidade->setObjectName("lblQuantidade");
+        lblQuantidade->setGeometry(QRect(30, 340, 131, 16));
         btnModificar = new QPushButton(page2_RegistarOPs);
         btnModificar->setObjectName("btnModificar");
         btnModificar->setGeometry(QRect(890, 270, 96, 35));
@@ -443,7 +443,7 @@ public:
         btnCancelar->setText(QCoreApplication::translate("Producao", " Cancelar", nullptr));
         txtCodigo->setText(QString());
         btnEliminar->setText(QCoreApplication::translate("Producao", " Eliminar", nullptr));
-        label_44->setText(QCoreApplication::translate("Producao", "Quant. Total a produzir", nullptr));
+        lblQuantidade->setText(QCoreApplication::translate("Producao", "Quant. Total a produzir", nullptr));
         btnModificar->setText(QCoreApplication::translate("Producao", " Alterar", nullptr));
         label_10->setText(QCoreApplication::translate("Producao", "Nr. OP", nullptr));
         txtDataCriacao->setText(QString());

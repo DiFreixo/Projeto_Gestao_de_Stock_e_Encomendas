@@ -101,6 +101,11 @@ void Producao::on_btnNovo_OP_clicked()
     ui->btnProducao->setEnabled(false);
     ui->btnFechar->setEnabled(false);
     preencherComboboxNrEncomenda(false);
+
+    QStringList titulos;
+    titulos = {"Cód. Produto", "Produto", "Gama", "Cor", "Quant. a produzir"};
+    ui->tableWidget_Produtos->setHorizontalHeaderLabels(titulos);
+    ui->lblQuantidade->setText("Quant. Total a produzir");
 }
 
 // preencher a combobox com os Números de Encomendas existentes
@@ -115,7 +120,7 @@ void Producao::preencherComboboxNrEncomenda(bool mostrarTodasEncomendas = false)
         queryString += "INNER JOIN encomendaDetalhe ON encomenda.ID_Encomenda = encomendaDetalhe.ID_Encomenda "
                        "WHERE encomenda.Expedida <> 'Total' AND encomendaDetalhe.Produzido <> 1 GROUP BY encomenda.Num_Encomenda;";
     } else {
-        queryString += "WHERE encomenda.Expedida <> 'Total' GROUP BY encomenda.Num_Encomenda;";
+        queryString += "GROUP BY encomenda.Num_Encomenda;";
     }
 
     QSqlQuery obterNrEncomenda;
@@ -429,7 +434,6 @@ void Producao::on_btnGuardar_clicked()
         qDebug() << "Ordem de produção registada com sucesso.";
         QMessageBox::information(this, "Aviso", "Ordem de produção registada com sucesso!");
 
-
         //apresentar a ficha do produto atualizada
         apresentarInfoOP(idProducaoGerado);
         //habilitar o botão
@@ -461,17 +465,38 @@ void Producao::apresentarInfoOP(const int &idProducaoGerado)
                        "WHERE producao.ID_Producao = :ID_Producao;");
 
     obterDados.bindValue(":ID_Producao", idProducaoGerado);
-
+    ui->tableWidget_Produtos->setRowCount(0); //limpa a tabela
     if(obterDados.exec() && obterDados.first())
     {
+        ui->tableWidget_Produtos->insertRow(0); //adiciona uma linha à tabela
+        // retirar a informação da base de dados
         ui->txtRegisto->setText(obterDados.value("ID_Producao").toString());
         ui->txtCodigo->setText(obterDados.value("Num_OP").toString());
+
         QString numEncomenda = obterDados.value("Num_Encomenda").toString();
         ui->cmbNrEncomenda->setCurrentText(numEncomenda);
         produtosEncomendaSelecionada(numEncomenda, true);
+
         ui->txtCliente->setText(obterDados.value("Cliente").toString());
         ui->txtQtdTotal->setText(obterDados.value("Qtd_produzida").toString());
         ui->txtStatusOP->setText(obterDados.value("Status_OP").toString());
+
+        // alterar o texto da label 'lblQuantidade'
+        QString estado = "";
+        estado = obterDados.value("Status_OP").toString();
+        if(estado == "Fechada")
+        {
+            ui->lblQuantidade->setText("Quant. Total Produzida");
+            QStringList titulos;
+            titulos = {"Cód. Produto", "Produto", "Gama", "Cor", "Quant. produzida"};
+            ui->tableWidget_Produtos->setHorizontalHeaderLabels(titulos);
+        }
+        else{
+            ui->lblQuantidade->setText("Quant. Total a Produzir");
+            QStringList titulos;
+            titulos = {"Cód. Produto", "Produto", "Gama", "Cor", "Quant. a produzir"};
+            ui->tableWidget_Produtos->setHorizontalHeaderLabels(titulos);
+        }
 
         // formatar data
         QString dataOPStr = obterDados.value("Data_ordemProducao").toString();
@@ -926,7 +951,7 @@ void Producao::limparCampos()
 {
     ui->txtDataProducao->clear();
     ui->cmbNrEncomenda->setCurrentIndex(0);
-    preencherComboboxNrEncomenda(false);
+    preencherComboboxNrEncomenda();
     ui->txtCliente->clear();
     ui->txtStatusOP->clear();
     ui->txtRegisto->clear();
@@ -987,7 +1012,7 @@ void Producao::carregarDadosProducao()
                        "produto.Produto, producao.Qtd_produzida, producao.Status_OP, producao.Data_ordemProducao "
                        "FROM producao INNER JOIN  encomenda ON producao.ID_Encomenda = encomenda.ID_Encomenda "
                        "INNER JOIN  producaodetalhe ON producao.ID_Producao = producaodetalhe.ID_Producao "
-                       "INNER JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto;");
+                       "INNER JOIN  produto ON producaodetalhe.ID_Produto = produto.ID_Produto ORDER BY producao.ID_Producao;");
 
     //verificar o acesso à BD
     if(obterDados.exec())

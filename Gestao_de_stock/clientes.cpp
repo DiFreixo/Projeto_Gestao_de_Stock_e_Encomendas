@@ -141,10 +141,10 @@ void Clientes::on_btnGuardar_clicked()
         qDebug() << "Cliente inserido com sucesso.";
         QMessageBox::information(this, "Aviso", "Registo guardado com sucesso!");
 
-        limparCampos();
-        habilitarCampos();
     }
 
+    limparCampos();
+    desabilitarCampos();
     ui->btnVoltar_clientes->setEnabled(true);
     ui->btnEliminar->setEnabled(false);
     ui->btnGuardar->setEnabled(false);
@@ -170,7 +170,7 @@ void Clientes::carregarDadosClientes()
     limparTableWidget(ui->tableWidget_clientes);
 
     QSqlQuery obterDados;
-    obterDados.prepare("SELECT ID_Cliente, NIF, Cliente, Telefone, Email, Data_criacao FROM cliente;");
+    obterDados.prepare("SELECT ID_Cliente, NIF, Cliente, Telefone, Email, Data_criacao FROM cliente ORDER BY ID_Cliente;");
 
     //verificar o acesso à BD
     if(obterDados.exec())

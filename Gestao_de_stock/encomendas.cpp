@@ -490,14 +490,13 @@ void Encomendas::on_btnGuardar_clicked()
 
         qDebug() << "Encomenda registada com sucesso.";
         QMessageBox::information(this, "Aviso", "Encomenda registada com sucesso!");
-
-        limparCampos();
-        habilitarCampos();
     }
 
+    limparCampos();
+    desabilitarCampos();
     ui->btnVoltar_encomendas->setEnabled(true);
     ui->btnEliminar->setEnabled(false);
-    ui->btnGuardar->setEnabled(true);
+    ui->btnGuardar->setEnabled(false);
     ui->btnCancelar->setEnabled(true);
     ui->btnModificar->setEnabled(false);
     carregarDadosEncomendas();
@@ -524,7 +523,7 @@ void Encomendas::carregarDadosEncomendas()
     QSqlQuery obterDados;
     obterDados.prepare("SELECT encomenda.ID_Encomenda, encomenda.Num_Encomenda, cliente.Cliente, encomenda.Qtd_encomenda, encomenda.Valor, "
                        "encomenda.Expedida, encomenda.Data_encomenda "
-                       "FROM encomenda INNER JOIN  cliente ON encomenda.ID_Cliente = cliente.ID_Cliente;");
+                       "FROM encomenda INNER JOIN  cliente ON encomenda.ID_Cliente = cliente.ID_Cliente ORDER BY encomenda.ID_Encomenda;");
 
     //verificar o acesso à BD
     if(obterDados.exec())
@@ -637,6 +636,13 @@ void Encomendas::on_tableWidget_encomendas_cellDoubleClicked()
         ui->txtNome->setText(obterDados.value("Cliente").toString());
         ui->txtQtdTotal->setText(obterDados.value("Qtd_encomenda").toString());
         ui->txtExpedida->setText(obterDados.value("Expedida").toString());
+
+        QString estado = obterDados.value("Expedida").toString();
+        if(estado == "Total") {
+            ui->btnModificar->setEnabled(false);
+            ui->btnEliminar->setEnabled(false);
+        }
+
         //substituir o ponto pela vírgula
         double valorTotal = obterDados.value("Valor").toDouble();
         QString valorTotalSemPonto = QString::number(valorTotal, 'f', 2).replace('.', ',');
@@ -738,7 +744,6 @@ void Encomendas::on_btnModificar_clicked()
     if(!ui->txtRegisto->text().isEmpty()) //Encomenda já existe na base de dados
     {
         ui->cmbClientes->setEnabled(false);
-
         // verificar o estado da encomenda
         // NOTA: só é possível atualizar encomendas que não contenham produtos em produção, encomendaDetalhe.Produzido = 0
         int totalEncomenda = 0;
@@ -758,6 +763,7 @@ void Encomendas::on_btnModificar_clicked()
 
         if (totalEncomenda != 0){
             QMessageBox::warning(this, "Encomenda em produção", "Não é possível atualizar encomendas associadas a Ordens de Produção.");
+            ui->btnGuardar->setDisabled(true);
             desabilitarCampos();
             return;
         }
@@ -909,6 +915,8 @@ void Encomendas::on_btnEliminar_clicked()
 
     if (totalEncomenda != 0){
         QMessageBox::warning(this, "Encomenda em produção", "Não é possível eliminar encomendas associadas a Ordens de Produção.");
+        ui->btnModificar->setEnabled(false);
+        ui->btnCancelar->setEnabled(true);
         return;
     }
 

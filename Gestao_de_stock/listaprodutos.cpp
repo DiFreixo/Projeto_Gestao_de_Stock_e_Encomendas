@@ -242,16 +242,16 @@ void ListaProdutos::on_btnGuardar_clicked()
         qDebug() << "Produto e detalhes inseridos com sucesso.";
         QMessageBox::information(this, "Aviso", "Registo guardado com sucesso!");
 
-        limparCampos();
-        habilitarCampos();
         ajustarVisibilidadeBotoes(true);
     }
 
+    limparCampos();
+    desabilitarCampos();
     ui->btnVoltar_produtos->setEnabled(true);
     ui->btnEliminar->setEnabled(false);
     ui->btnGuardar->setEnabled(false);
     ui->btnCancelar->setEnabled(true);
-    ui->btnModificar->setEnabled(false);
+    ui->btnModificar->setEnabled(false);   
     //após registar os produtos é necessário carregar os dados novamente
     carregarDadosProdutos();
     emit listaProdutosAtualizada();
@@ -315,7 +315,7 @@ void ListaProdutos::carregarDadosProdutos()
     QSqlQuery obterDados;
     obterDados.prepare("SELECT produto.ID_Produto, produto.Codigo_Produto, produto.Produto, produtodetalhe.Gama, produtodetalhe.Cor, "
                        "produtodetalhe.Volume, produtodetalhe.Peso, produtodetalhe.Altura, produtodetalhe.Diametro, produto.Preco_venda, "
-                       "produto.Data_criacao FROM produto INNER JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto;");
+                       "produto.Data_criacao FROM produto INNER JOIN  produtodetalhe ON produto.ID_Produto = produtodetalhe.ID_Produto ORDER BY produto.ID_Produto;");
 
     //verificar o acesso à BD
     if(obterDados.exec())
@@ -487,21 +487,27 @@ void ListaProdutos::on_tableWidget_ListaProdutos_cellDoubleClicked()
 
         // contabilizar o total de vendas do produto
         // Considerar as produtos expedidos, expedicao.Expedida = 'Sim'
-        QSqlQuery soma;
-        soma.prepare("SELECT sum(expedicaoDetalhe.Qtd_produto) as total "
+        QSqlQuery queryTotal;
+        queryTotal.prepare("SELECT sum(expedicaoDetalhe.Qtd_produto) as total "
                        "FROM expedicaoDetalhe "
                        "INNER JOIN expedicao ON expedicaoDetalhe.ID_Expedicao = expedicao.ID_Expedicao  "
                        "WHERE expedicaoDetalhe.ID_Produto = :idProduto AND "
                        "expedicao.Expedida = 'Sim';");
-        soma.bindValue(":idProduto", idProduto);
+        queryTotal.bindValue(":idProduto", idProduto);
 
-        if(soma.exec() && soma.next()){
-            ui->txtTotalVendido->setText(soma.value("total").toString());;
-            int totalVendas = soma.value("total").toInt() * precoVendaSemPonto.toInt();
-            ui->txtTotalVendas->setText(QString::number(totalVendas));
+        if(queryTotal.exec() && queryTotal.next())
+        {
+            ui->txtTotalVendido->setText(queryTotal.value("total").toString());
+
+            double precoVenda = obterDados.value("Preco_venda").toDouble();
+            int quantTotal = queryTotal.value("total").toInt();
+            double totalVendas = quantTotal * precoVenda;
+
+            QString totalVendasStr = QString::number(totalVendas, 'f', 2).replace('.', ',');
+            ui->txtTotalVendas->setText(totalVendasStr);
         }
         else{
-            qDebug() << "Falha ao contablizar a total de produdos vendidos:" << soma.lastError().text();
+            qDebug() << "Falha ao contablizar a total de produdos vendidos:" << queryTotal.lastError().text();
         }
     }
     else

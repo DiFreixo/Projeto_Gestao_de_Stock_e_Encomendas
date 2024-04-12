@@ -75,17 +75,20 @@ void Expedicao::on_btnNovo_expedicao_clicked()
     ui->btnModificar->setEnabled(false);
     ui->btnExpedicao->setEnabled(false);
 
+    // Limpar o modelo 'modeloTableView'
+    if (modeloTableView != nullptr) {
+        tableViewProdutos->setVisible(false);
+        delete modeloTableView;
+        modeloTableView = nullptr;
+    }
+
     atualizarModeloTreeView();
-    preencherComboboxNif(false);
 }
 
 void Expedicao::on_btnVoltar_expedicao_clicked()
 {
     limparCampos();
     ui->stackedWidget->setCurrentIndex(0);
-
-    // reiniciar o 'modeloTreeView'
-    atualizarModeloTreeView();
 
     // Limpar o modelo 'modeloTableView' ao sair da página de registo de expedições
     if (modeloTableView != nullptr) {
@@ -132,7 +135,7 @@ void Expedicao::preencherComboboxNif(bool mostrarTodosNifs = false)
     }
 }
 
-void Expedicao::atualizarModeloTreeView()
+void Expedicao::atualizarModeloTreeView() //CORRIGIR
 {
     if (modeloTreeView == nullptr) {
         modeloTreeView = new QStandardItemModel(ui->page2_RegistarExpedicoes);
@@ -158,6 +161,7 @@ void Expedicao::atualizarModeloTreeView()
     ui->treeViewProdutos->header()->resizeSection(1, 190);
     ui->treeViewProdutos->header()->resizeSection(2, 230);
     ui->treeViewProdutos->header()->resizeSection(3, 190);
+    ui->treeViewProdutos->setVisible(true);
     // atualização da treeView
     ui->treeViewProdutos->update();
 }
@@ -197,12 +201,12 @@ void Expedicao::apresentarEncomendasDisponiveis(const QString &nif)
 {
     atualizarModeloTreeView();
     // apresentar as encomendas do cliente para o nif escolhido
-   // apenas ecomendas que ainda não tenham uma expedição associada
+   // apenas ecomendas que tenham OPs associadas e que não estejam em expedição
     QSqlQuery obterEncomendas;
     obterEncomendas.prepare("SELECT Num_Encomenda FROM encomenda "
                             "INNER JOIN cliente ON encomenda.ID_Cliente = cliente.ID_Cliente "
                             "INNER JOIN encomendaDetalhe ON encomenda.ID_Encomenda = encomendaDetalhe.ID_Encomenda "
-                            "WHERE cliente.NIF = :NIF AND encomendaDetalhe.Expedido <> 1 GROUP BY Num_Encomenda;");
+                            "WHERE cliente.NIF = :NIF AND encomendaDetalhe.Expedido <> 1 AND encomendaDetalhe.Produzido = 1 GROUP BY Num_Encomenda;");
     obterEncomendas.bindValue(":NIF", nif);
 
     if(obterEncomendas.exec())
@@ -213,7 +217,20 @@ void Expedicao::apresentarEncomendasDisponiveis(const QString &nif)
             //qDebug() << "Encomenda:" << numeroEncomenda;
 
             QStandardItem *itemEncomenda = new QStandardItem(numeroEncomenda);
-            modeloTreeView->appendRow(itemEncomenda);
+            // não permitir a edição do campo
+            itemEncomenda->setEditable(false);
+
+            // definir as células vazias como não editáveis
+            // para isso criaram-se itens vazios para preencher as colunas
+            QList<QStandardItem*> itemsRow;
+            itemsRow.append(itemEncomenda);
+            for (int coluna = 1; coluna < 4; coluna++) {
+                QStandardItem *emptyItem = new QStandardItem();
+                emptyItem->setEditable(false);
+                itemsRow.append(emptyItem);
+            }
+
+            modeloTreeView->appendRow(itemsRow);
 
             // apresentar os produtos de cada encomenda
             // apenas produtos da encomenda não expedidos e que se encontram em produção
@@ -238,12 +255,18 @@ void Expedicao::apresentarEncomendasDisponiveis(const QString &nif)
                 QStandardItem *checkBoxItem = new QStandardItem();
                 checkBoxItem->setCheckable(true);
                 checkBoxItem->setData(Qt::Unchecked, Qt::CheckStateRole);
+                checkBoxItem->setEditable(false);  // definir a célula  como não editável
 
-                row << checkBoxItem; // adicionar a checkbox
-                row << new QStandardItem(codigoProduto);
-                row << new QStandardItem(nomeProduto);
-                row << new QStandardItem(QString::number(quantidade));
+                // adicionar os detalhes do produto
+                QStandardItem *itemCodigoProduto = new QStandardItem(codigoProduto);
+                QStandardItem *itemNomeProduto = new QStandardItem(nomeProduto);
+                QStandardItem *itemQuantidade = new QStandardItem(QString::number(quantidade));
+                // não permitir a edição dos campos
+                itemCodigoProduto->setEditable(false);
+                itemNomeProduto->setEditable(false);
+                itemQuantidade->setEditable(false);
 
+                row << checkBoxItem << itemCodigoProduto << itemNomeProduto << itemQuantidade;
                 itemEncomenda->appendRow(row);
             }
         }
@@ -496,7 +519,7 @@ void Expedicao::on_btnGuardar_clicked()
     carregarDadosExpedicao();
 }
 
-void Expedicao::atualizarModeloTableView()
+void Expedicao::atualizarModeloTableView()  //CORRIGIR
 {
     if (modeloTableView == nullptr) {
         modeloTableView = new QStandardItemModel(ui->page2_RegistarExpedicoes);
@@ -508,31 +531,40 @@ void Expedicao::atualizarModeloTableView()
     QStringList titulos;
     titulos = {"Cód. Produto", "Produto", "Nr. Encomenda", "Quantidade"};
     modeloTableView->setHorizontalHeaderLabels(titulos);
-    // criar a QTableView
-    tableViewProdutos = new QTableView(ui->page2_RegistarExpedicoes);
-    tableViewProdutos->setStyleSheet(
-        "QTableView::item {background-color: #DAF7D9; color: black;}"
-        "QHeaderView::section {color: white; background-color: #004b23; font: bold 10px;}"
-        "QTableView {border: 2px solid #004b23; background-color: #ADCE74;}"
-        );
-    tableViewProdutos->verticalHeader()->setVisible(true); // exibir os números das linhas
-    tableViewProdutos->setModel(modeloTableView);
-    tableViewProdutos->horizontalHeader()->resizeSection(0, 180);
-    tableViewProdutos->horizontalHeader()->resizeSection(1, 240);
-    tableViewProdutos->horizontalHeader()->resizeSection(2, 180);
-    tableViewProdutos->horizontalHeader()->resizeSection(3, 180);
-    tableViewProdutos->setGeometry(QRect(30, 390, 801, 260)); // definir a posição e o tamanho da QTableView
-    tableViewProdutos->setEditTriggers(QAbstractItemView::NoEditTriggers); // desativar a edição
-    tableViewProdutos->horizontalHeader()->setHighlightSections(false);
-    tableViewProdutos->verticalHeader()->setHighlightSections(false);
-    tableViewProdutos->horizontalHeader()->setStretchLastSection(true);
-    tableViewProdutos->setVisible(true);
 
+    if(tableViewProdutos == nullptr){
+        // criar a QTableView
+        tableViewProdutos = new QTableView(ui->page2_RegistarExpedicoes);
+        tableViewProdutos->setStyleSheet(
+            "QTableView::item {background-color: #DAF7D9; color: black;}"
+            "QHeaderView::section {color: white; background-color: #004b23; font: bold 10px;}"
+            "QTableView {border: 2px solid #004b23; background-color: #ADCE74;}"
+            );
+        tableViewProdutos->setModel(modeloTableView);
+        tableViewProdutos->verticalHeader()->setVisible(true); // exibir os números das linhas
+        tableViewProdutos->horizontalHeader()->resizeSection(0, 180);
+        tableViewProdutos->horizontalHeader()->resizeSection(1, 240);
+        tableViewProdutos->horizontalHeader()->resizeSection(2, 180);
+        tableViewProdutos->horizontalHeader()->resizeSection(3, 180);
+        tableViewProdutos->setEditTriggers(QAbstractItemView::NoEditTriggers); // desativar a edição
+        tableViewProdutos->horizontalHeader()->setHighlightSections(false);
+        tableViewProdutos->verticalHeader()->setHighlightSections(false);
+        tableViewProdutos->horizontalHeader()->setStretchLastSection(true);
+        tableViewProdutos->setGeometry(QRect(30, 390, 801, 260)); // definir a posição e o tamanho da QTableView
+        tableViewProdutos->setVisible(true);
+    }
 }
 
 // Após guardar o registo da expedição, apresentar a página de 'Registos de expedições' com toda a informação do registo
-void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado)
+void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado) //CORRIGIR visivilidade da QtreeView e QTableView
 {
+    // Limpar o modelo 'modeloTreeView'
+    if (modeloTreeView != nullptr) {
+        ui->treeViewProdutos->setVisible(false);
+        delete modeloTreeView;
+        modeloTreeView = nullptr;
+    }
+
     QSqlQuery obterDados;
     obterDados.prepare("SELECT expedicao.ID_Expedicao, expedicao.Num_Expedicao, cliente.NIF, cliente.Cliente, expedicao.Qtd_expedicao, "
                        "expedicao.Data_registo, expedicao.Data_expedicaoPrevista, expedicao.Expedida "
@@ -559,6 +591,9 @@ void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado)
         if(estado == "Sim")
         {
             ui->lblQtdTotalExpedir->setText("Quant. Total Expedida");
+        }
+        else{
+            ui->lblQtdTotalExpedir->setText("Quant. Total a Expedir");
         }
 
         // formatar data do registo da expedicao
@@ -634,9 +669,6 @@ void Expedicao::on_btnModificar_clicked()
     atualizarModeloTreeView();
 }
 
-
-
-// CORRIGIR visivilidade da treeView após  btnExpedicao_clicked
 // Muda o status da Expedição de 'Não' para 'Sim'.
 // Apenas posso carregar no botão expedição quando a OP estiver no estado fechada (o produto já deu entrada em stock).
 // Saída do produto do stock - atualiza a quantidade do produto em stock (total, reservada e disponível).
@@ -891,7 +923,7 @@ void Expedicao::relatorioExpedicao()
     dialog.exec();
 }
 
-void Expedicao::on_tableWidget_expedicoes_cellDoubleClicked()
+void Expedicao::on_tableWidget_expedicoes_cellDoubleClicked() //CORRIGIR
 {
     desabilitarCampos();
     ui->btnVoltar_expedicao->setEnabled(true);
@@ -931,7 +963,7 @@ void Expedicao::carregarDadosExpedicao()
     QSqlQuery obterDados;
     obterDados.prepare("SELECT expedicao.ID_Expedicao, expedicao.Num_Expedicao, cliente.Cliente, "
                        "expedicao.Qtd_expedicao, expedicao.Expedida, expedicao.Data_expedicao "
-                       "FROM expedicao INNER JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente;");
+                       "FROM expedicao INNER JOIN cliente ON expedicao.ID_Cliente = cliente.ID_Cliente ORDER BY expedicao.ID_Expedicao;");
 
     //verificar o acesso à BD
     if(obterDados.exec())
