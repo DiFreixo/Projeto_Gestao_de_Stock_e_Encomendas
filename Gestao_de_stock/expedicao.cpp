@@ -74,6 +74,7 @@ void Expedicao::on_btnNovo_expedicao_clicked()
     ui->btnCancelar->setEnabled(true);
     ui->btnModificar->setEnabled(false);
     ui->btnExpedicao->setEnabled(false);
+    preencherComboboxNif(false);
 
     // Limpar o modelo 'modeloTableView'
     if (modeloTableView != nullptr) {
@@ -89,13 +90,6 @@ void Expedicao::on_btnVoltar_expedicao_clicked()
 {
     limparCampos();
     ui->stackedWidget->setCurrentIndex(0);
-
-    // Limpar o modelo 'modeloTableView' ao sair da página de registo de expedições
-    if (modeloTableView != nullptr) {
-        tableViewProdutos->setVisible(false);
-        delete modeloTableView;
-        modeloTableView = nullptr;
-    }
 }
 
 // preencher a combobox com os NIF dos clientes
@@ -135,7 +129,7 @@ void Expedicao::preencherComboboxNif(bool mostrarTodosNifs = false)
     }
 }
 
-void Expedicao::atualizarModeloTreeView() //CORRIGIR
+void Expedicao::atualizarModeloTreeView()
 {
     if (modeloTreeView == nullptr) {
         modeloTreeView = new QStandardItemModel(ui->page2_RegistarExpedicoes);
@@ -211,8 +205,9 @@ void Expedicao::apresentarEncomendasDisponiveis(const QString &nif)
 
     if(obterEncomendas.exec())
     {
-        modeloTreeView->setRowCount(0);
-        while (obterEncomendas.next()) {
+        modeloTreeView->setRowCount(0); // limpa o modelo
+        while (obterEncomendas.next())
+        {
             QString numeroEncomenda = obterEncomendas.value("Num_Encomenda").toString();
             //qDebug() << "Encomenda:" << numeroEncomenda;
 
@@ -519,8 +514,10 @@ void Expedicao::on_btnGuardar_clicked()
     carregarDadosExpedicao();
 }
 
-void Expedicao::atualizarModeloTableView()  //CORRIGIR
+void Expedicao::atualizarModeloTableView()
 {
+    ui->treeViewProdutos->setVisible(false);
+
     if (modeloTableView == nullptr) {
         modeloTableView = new QStandardItemModel(ui->page2_RegistarExpedicoes);
     } else {
@@ -553,10 +550,17 @@ void Expedicao::atualizarModeloTableView()  //CORRIGIR
         tableViewProdutos->setGeometry(QRect(30, 390, 801, 260)); // definir a posição e o tamanho da QTableView
         tableViewProdutos->setVisible(true);
     }
+    tableViewProdutos->setModel(modeloTableView);
+    tableViewProdutos->horizontalHeader()->resizeSection(0, 180);
+    tableViewProdutos->horizontalHeader()->resizeSection(1, 240);
+    tableViewProdutos->horizontalHeader()->resizeSection(2, 180);
+    tableViewProdutos->horizontalHeader()->resizeSection(3, 180);
+    tableViewProdutos->setGeometry(QRect(30, 390, 801, 260));
+    tableViewProdutos->setVisible(true);
 }
 
 // Após guardar o registo da expedição, apresentar a página de 'Registos de expedições' com toda a informação do registo
-void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado) //CORRIGIR visivilidade da QtreeView e QTableView
+void Expedicao::apresentarInfoExpedicao(const int &idExpedicaoGerado)
 {
     // Limpar o modelo 'modeloTreeView'
     if (modeloTreeView != nullptr) {
@@ -923,7 +927,7 @@ void Expedicao::relatorioExpedicao()
     dialog.exec();
 }
 
-void Expedicao::on_tableWidget_expedicoes_cellDoubleClicked() //CORRIGIR
+void Expedicao::on_tableWidget_expedicoes_cellDoubleClicked()
 {
     desabilitarCampos();
     ui->btnVoltar_expedicao->setEnabled(true);

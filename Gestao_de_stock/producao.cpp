@@ -465,6 +465,7 @@ void Producao::apresentarInfoOP(const int &idProducaoGerado)
                        "WHERE producao.ID_Producao = :ID_Producao;");
 
     obterDados.bindValue(":ID_Producao", idProducaoGerado);
+
     ui->tableWidget_Produtos->setRowCount(0); //limpa a tabela
     if(obterDados.exec() && obterDados.first())
     {
