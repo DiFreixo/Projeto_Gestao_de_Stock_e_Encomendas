@@ -282,6 +282,8 @@ void StockProdutos::on_btnSaidaStock_clicked()
 
             if (qtdSaida > qtdDisponivel) {
                 QMessageBox::warning(this, "Quantidade inválida", "A quantidade de saída não pode ser maior do que a quantidade disponível em stock.");
+                ui->txtCodigoProduto->clear();
+                ui->txtQuantidade->clear();
                 bd.rollback();
                 return;
             }
